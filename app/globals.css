@@ -1,26 +1,189 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ---------------------------------------------------------------------------
+   Design tokens — lifted from the reference design
+   ink #1a1a1a · accent #ff6100 · cream #f2d9c2 · paper #f5f5f5 · muted #454545
+--------------------------------------------------------------------------- */
+@theme {
+  /* Crown brand palette, taken from the project brochure:
+     navy #0b3a73 · orange #ee6123 · white. */
+  --color-ink: #0b3a73;
+  --color-ink-800: #0e4585;
+  --color-ink-700: #12508f;
+  --color-ink-600: #1a5ba0;
+  --color-ink-950: #072a55;
+  --color-muted: #5b6b83;
+  --color-paper: #ffffff;
+  --color-mist: #f2f5fa;
+  --color-cream: #fde8dc;
+  --color-accent: #ee6123;
+  --color-accent-light: #f5793f;
+  --color-accent-dark: #d24f16;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* The reference design is sharp-edged: cards, buttons, images and inputs all
+     square. Only the small eyebrow badges and avatars stay rounded. */
+  --radius-card: 0px;
+  --radius-pill: 200px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-marquee-reverse: marquee-reverse 40s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes marquee-reverse {
+    from {
+      transform: translateX(-50%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-14px);
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.6;
+    }
+    70% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  /* Lenis takes over scrolling on the client; hand off from native smooth. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  html.lenis {
+    scroll-behavior: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+
+  /* Headline rhythm matching the reference: tight tracking, 1.05 leading */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+  }
+}
+
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Section eyebrow pill — "Services", "Properties", "FAQ" … */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    padding: 0.4rem 0.95rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .card-surface {
+    border-radius: var(--radius-card);
+    background-color: var(--color-ink-800);
+    border: 1px solid #ffffff14;
+  }
+
+  /* Grain overlay used on dark photo panels */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
