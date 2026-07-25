@@ -52,7 +52,6 @@ export function Dashboard({
   scroll: ScrollBucket[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
-
   const counts: Record<Tab, number | null> = {
     overview: null,
     leads: leads.length,
@@ -63,13 +62,13 @@ export function Dashboard({
   return (
     <div>
       {/* Tab bar */}
-      <div className="mb-8 flex gap-1 border-b border-white/10">
+      <div className="mb-8 flex flex-wrap gap-1 border-b border-white/10">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`relative -mb-px px-5 py-3 text-sm font-semibold transition-colors ${
+            className={`relative -mb-px flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-colors ${
               tab === t.id
                 ? "border-b-2 border-accent text-white"
                 : "border-b-2 border-transparent text-white/50 hover:text-white/80"
@@ -77,7 +76,11 @@ export function Dashboard({
           >
             {t.label}
             {counts[t.id] !== null && (
-              <span className="ml-2 bg-white/10 px-1.5 py-0.5 text-xs text-white/60">
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  tab === t.id ? "bg-accent/20 text-accent" : "bg-white/10 text-white/55"
+                }`}
+              >
                 {counts[t.id]}
               </span>
             )}
@@ -86,54 +89,48 @@ export function Dashboard({
       </div>
 
       {tab === "overview" && (
-        <div className="space-y-10">
-          <div className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-4 lg:grid-cols-7">
-            {[
-              { label: "Visitors", value: fmt(overview.visitors) },
-              { label: "Sessions", value: fmt(overview.sessions) },
-              { label: "Leads", value: fmt(overview.leads) },
-              { label: "Conversion", value: pct(overview.convRate) },
-              { label: "Scrolled 50%+", value: fmt(overview.scrolled50) },
-              { label: "Clicked a CTA", value: fmt(overview.ctaSessions) },
-              { label: "Avg. time", value: mins(overview.avgDurationMs) },
-            ].map((s) => (
-              <div key={s.label} className="bg-[#111c2e] p-5">
-                <p className="text-2xl font-bold text-white">{s.value}</p>
-                <p className="mt-1 text-xs text-white/45">{s.label}</p>
-              </div>
-            ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+            <Stat label="Visitors" value={fmt(overview.visitors)} />
+            <Stat label="Sessions" value={fmt(overview.sessions)} />
+            <Stat label="Leads" value={fmt(overview.leads)} accent />
+            <Stat label="Conversion" value={pct(overview.convRate)} accent />
+            <Stat label="Scrolled 50%+" value={fmt(overview.scrolled50)} />
+            <Stat label="Clicked a CTA" value={fmt(overview.ctaSessions)} />
+            <Stat label="Avg. time" value={mins(overview.avgDurationMs)} />
           </div>
 
-          <section>
-            <h2 className="text-lg font-bold">Funnel</h2>
-            <div className="mt-4 space-y-2">
-              <Bar label="Sessions" value={overview.sessions} total={overview.sessions} />
-              <Bar label="Scrolled 50%+" value={overview.scrolled50} total={overview.sessions} />
-              <Bar label="Clicked a CTA" value={overview.ctaSessions} total={overview.sessions} />
-              <Bar label="Converted (lead)" value={overview.convertedSessions} total={overview.sessions} />
-            </div>
-          </section>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card title="Conversion funnel">
+              <div className="space-y-3">
+                <Bar label="Sessions" value={overview.sessions} total={overview.sessions} />
+                <Bar label="Scrolled 50%+" value={overview.scrolled50} total={overview.sessions} />
+                <Bar label="Clicked a CTA" value={overview.ctaSessions} total={overview.sessions} />
+                <Bar label="Converted (lead)" value={overview.convertedSessions} total={overview.sessions} accent />
+              </div>
+            </Card>
 
-          <section>
-            <h2 className="text-lg font-bold">Traffic sources</h2>
-            <Table
-              head={["Source", "Medium", "Sessions", "Leads", "Conv."]}
-              rows={sources.map((s) => [
-                s.source,
-                s.medium,
-                fmt(s.sessions),
-                fmt(s.leads),
-                pct(s.sessions ? (s.leads / s.sessions) * 100 : 0),
-              ])}
-              empty="No sessions yet."
-            />
-          </section>
+            <Card title="Traffic sources">
+              <SimpleTable
+                head={["Source", "Medium", "Sessions", "Leads", "Conv."]}
+                align={["l", "l", "r", "r", "r"]}
+                rows={sources.map((s) => [
+                  s.source,
+                  s.medium,
+                  fmt(s.sessions),
+                  fmt(s.leads),
+                  pct(s.sessions ? (s.leads / s.sessions) * 100 : 0),
+                ])}
+                empty="No sessions yet."
+              />
+            </Card>
+          </div>
         </div>
       )}
 
       {tab === "leads" && (
-        <section>
-          <Table
+        <Card title={`Leads (${leads.length})`}>
+          <SimpleTable
             head={["When", "Name", "Mobile", "Config", "Budget", "Form", "Source", "Location", "Device"]}
             rows={leads.map((l) => [
               when(l.createdAt),
@@ -147,54 +144,59 @@ export function Dashboard({
               l.device || "—",
             ])}
             empty="No leads yet."
+            scroll
           />
-        </section>
+        </Card>
       )}
 
       {tab === "behaviour" && (
-        <div className="space-y-10">
-          <div className="grid gap-8 lg:grid-cols-2">
-            <section>
-              <h2 className="text-lg font-bold">CTA clicks</h2>
-              <Table
-                head={["Call-to-action", "Clicks", "Sessions"]}
-                rows={ctas.map((c) => [c.label, fmt(c.count), fmt(c.sessions)])}
-                empty="No CTA clicks recorded yet."
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card title="CTA clicks">
+            {ctas.length === 0 ? (
+              <Empty>No CTA clicks recorded yet.</Empty>
+            ) : (
+              <RankedList
+                items={ctas.map((c) => ({
+                  label: c.label,
+                  value: c.count,
+                  sub: `${c.sessions} session${c.sessions === 1 ? "" : "s"}`,
+                }))}
+                max={Math.max(...ctas.map((c) => c.count))}
+                unit="clicks"
               />
-            </section>
-            <section>
-              <h2 className="text-lg font-bold">Section reach</h2>
-              <div className="mt-4 space-y-2">
-                {sectionReach.length === 0 ? (
-                  <Empty>No section views yet.</Empty>
-                ) : (
-                  sectionReach.map((s) => (
-                    <Bar
-                      key={s.label}
-                      label={SECTION_LABEL[s.label] ?? s.label}
-                      value={s.sessions}
-                      total={overview.sessions}
-                    />
-                  ))
-                )}
-              </div>
-            </section>
-          </div>
+            )}
+          </Card>
 
-          <section>
-            <h2 className="text-lg font-bold">Scroll depth</h2>
-            <div className="mt-4 space-y-2">
+          <Card title="Section reach">
+            {sectionReach.length === 0 ? (
+              <Empty>No section views yet.</Empty>
+            ) : (
+              <div className="space-y-3">
+                {sectionReach.map((s) => (
+                  <Bar
+                    key={s.label}
+                    label={SECTION_LABEL[s.label] ?? s.label}
+                    value={s.sessions}
+                    total={overview.sessions}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title="Scroll depth" className="lg:col-span-2">
+            <div className="space-y-3">
               {scroll.map((b) => (
                 <Bar key={b.band} label={b.band} value={b.sessions} total={overview.sessions} />
               ))}
             </div>
-          </section>
+          </Card>
         </div>
       )}
 
       {tab === "sessions" && (
-        <section>
-          <Table
+        <Card title={`Recent sessions (${sessions.length})`}>
+          <SimpleTable
             head={["Started", "Source", "Location", "Device", "IP", "Views", "Scroll", "CTAs", "Time", "Lead?"]}
             rows={sessions.map((s) => [
               when(s.startedAt),
@@ -209,14 +211,185 @@ export function Dashboard({
               s.converted ? "✓" : "",
             ])}
             empty="No sessions yet."
+            scroll
           />
-        </section>
+        </Card>
       )}
     </div>
   );
 }
 
-/* -------------------------------------------------------------------------- */
+/* --------------------------------- pieces --------------------------------- */
+
+function Card({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`border border-white/10 bg-[#111c2e] ${className}`}>
+      <h2 className="border-b border-white/10 px-5 py-3.5 text-sm font-semibold tracking-wide text-white/80 uppercase">
+        {title}
+      </h2>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="border border-white/10 bg-[#111c2e] p-5">
+      <p className={`text-3xl font-bold ${accent ? "text-accent" : "text-white"}`}>
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-white/45">{label}</p>
+    </div>
+  );
+}
+
+function Bar({
+  label,
+  value,
+  total,
+  accent = false,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  accent?: boolean;
+}) {
+  const p = total ? (value / total) * 100 : 0;
+  return (
+    <div className="flex items-center gap-4">
+      <span className="w-28 shrink-0 truncate text-sm text-white/70">{label}</span>
+      <div className="relative h-7 flex-1 overflow-hidden rounded bg-white/[0.04]">
+        <div
+          className={`h-full rounded ${accent ? "bg-accent" : "bg-accent/70"}`}
+          style={{ width: `${Math.max(value ? 3 : 0, p)}%` }}
+        />
+      </div>
+      <span className="w-24 shrink-0 text-right text-sm text-white/80">
+        <span className="font-semibold text-white">{fmt(value)}</span>
+        <span className="ml-1.5 text-white/40">{p.toFixed(0)}%</span>
+      </span>
+    </div>
+  );
+}
+
+function RankedList({
+  items,
+  max,
+  unit,
+}: {
+  items: { label: string; value: number; sub: string }[];
+  max: number;
+  unit: string;
+}) {
+  return (
+    <ol className="space-y-3">
+      {items.map((it, i) => (
+        <li key={it.label} className="flex items-center gap-3">
+          <span className="w-5 shrink-0 text-right font-mono text-xs text-white/35">
+            {i + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="truncate text-sm font-medium text-white">
+                {it.label}
+              </span>
+              <span className="shrink-0 text-sm">
+                <span className="font-semibold text-white">{fmt(it.value)}</span>
+                <span className="ml-1 text-xs text-white/40">{unit}</span>
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded bg-white/[0.04]">
+              <div
+                className="h-full rounded bg-accent/70"
+                style={{ width: `${max ? (it.value / max) * 100 : 0}%` }}
+              />
+            </div>
+            <p className="mt-1 text-xs text-white/40">{it.sub}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="py-8 text-center text-sm text-white/40">{children}</p>;
+}
+
+function SimpleTable({
+  head,
+  rows,
+  empty,
+  align,
+  scroll = false,
+}: {
+  head: string[];
+  rows: (string | number)[][];
+  empty: string;
+  align?: ("l" | "r")[];
+  scroll?: boolean;
+}) {
+  const alignClass = (i: number) =>
+    align?.[i] === "r" ? "text-right" : "text-left";
+  return (
+    <div className={scroll ? "overflow-x-auto" : ""}>
+      <table className={`w-full border-collapse text-sm ${scroll ? "min-w-[720px]" : ""}`}>
+        <thead>
+          <tr className="text-left">
+            {head.map((h, i) => (
+              <th
+                key={h}
+                className={`pb-2.5 text-xs font-semibold tracking-wide text-white/40 uppercase ${alignClass(i)}`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={head.length} className="py-6 text-center text-white/40">
+                {empty}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row, i) => (
+              <tr key={i} className="border-t border-white/5">
+                {row.map((cell, j) => (
+                  <td
+                    key={j}
+                    className={`py-3 whitespace-nowrap text-white/80 ${alignClass(j)}`}
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* --------------------------------- format --------------------------------- */
 
 function fmt(n: number) {
   return n.toLocaleString("en-IN");
@@ -229,7 +402,6 @@ function mins(ms: number) {
   return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
 }
 function when(iso: string) {
-  // Always render in IST, regardless of where the server runs (Vercel = UTC).
   return new Date(iso).toLocaleString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -241,84 +413,4 @@ function when(iso: string) {
 }
 function geo(city: string | null, country: string | null) {
   return [city, country].filter(Boolean).join(", ") || "—";
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="border border-white/10 px-4 py-8 text-center text-white/40">
-      {children}
-    </p>
-  );
-}
-
-function Bar({
-  label,
-  value,
-  total,
-}: {
-  label: string;
-  value: number;
-  total: number;
-}) {
-  const width = total ? Math.max(2, (value / total) * 100) : 0;
-  return (
-    <div className="flex items-center gap-4">
-      <span className="w-36 shrink-0 text-sm text-white/60">{label}</span>
-      <div className="relative h-8 flex-1 bg-white/5">
-        <div className="h-full bg-accent/80" style={{ width: `${width}%` }} />
-        <span className="absolute inset-y-0 left-3 flex items-center text-xs font-semibold text-white">
-          {value.toLocaleString("en-IN")}
-          {total ? ` · ${((value / total) * 100).toFixed(0)}%` : ""}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Table({
-  head,
-  rows,
-  empty,
-}: {
-  head: string[];
-  rows: (string | number)[][];
-  empty: string;
-}) {
-  return (
-    <div className="mt-4 overflow-x-auto border border-white/10">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
-        <thead>
-          <tr className="bg-white/5 text-left">
-            {head.map((h) => (
-              <th
-                key={h}
-                className="px-4 py-3 text-xs font-semibold tracking-wide text-white/45 uppercase"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={head.length} className="px-4 py-8 text-center text-white/40">
-                {empty}
-              </td>
-            </tr>
-          ) : (
-            rows.map((row, i) => (
-              <tr key={i} className="border-t border-white/5">
-                {row.map((cell, j) => (
-                  <td key={j} className="px-4 py-3 whitespace-nowrap text-white/80">
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
 }

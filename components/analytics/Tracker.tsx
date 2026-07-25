@@ -130,8 +130,11 @@ export function Tracker() {
         if (href.startsWith("#")) return text(link) || href;
       }
       const btn = el.closest("button");
-      if (btn && btn.type === "submit") return `Submit: ${formName(btn)}`;
-      if (btn) return text(btn) || "Button";
+      if (btn) {
+        if (btn.type === "submit") return `Submit: ${formName(btn)}`;
+        // Prefer an accessible label for icon-only buttons.
+        return btn.getAttribute("aria-label") || text(btn) || "Button";
+      }
       return null;
     };
     const text = (el: Element) =>
