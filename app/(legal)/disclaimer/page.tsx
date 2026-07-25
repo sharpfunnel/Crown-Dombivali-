@@ -35,7 +35,7 @@ export default function DisclaimerPage() {
           // CC BY / CC BY-SA licences require this credit to remain visible.
           heading: "Image credits",
           body: [
-            "Photographs of the Mumbai metropolitan region used on this website are licensed from Wikimedia Commons and do not depict this project: “Mumbai Metro at Gundavali Station” by Mumbaimetro (CC BY-SA 4.0); “Navi Mumbai Skyline” by Anurupa Chowdhury (CC BY 3.0); “Raheja Vivera Mumbai” by Creater903a (CC0); “A skyscraper in Mumbai from railway station” by Nicolas Vigier (CC0).",
+            "Photographs of the Mumbai metropolitan region and representative amenity images used on this website are licensed from Wikimedia Commons and do not depict this project: “Mumbai Metro at Gundavali Station” by Mumbaimetro (CC BY-SA 4.0); “Navi Mumbai Skyline” by Anurupa Chowdhury (CC BY 3.0); “Raheja Vivera Mumbai” by Creater903a (CC0); “Shree Siddhivinayak Mandir” (public domain); “Southern Palms - Pool 2” by John Hickey-Fry (CC BY 2.0).",
             "These images are included to illustrate the wider location and connectivity context only, and are representational in the same way as all other imagery on this website.",
           ],
         },

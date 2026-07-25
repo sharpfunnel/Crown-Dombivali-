@@ -5,12 +5,18 @@ licences that **legally require visible attribution** wherever the image is
 published — keep the credits below on the site (they currently sit on the
 `/disclaimer` page) or replace the images before launch.
 
-| File | Source | Author | Licence | Attribution required |
-|---|---|---|---|---|
-| `mumbai-metro.jpg` | [Mumbai Metro at Gundavali Station](https://commons.wikimedia.org/wiki/File:Mumbai_Metro_at_Gundavali_Station.jpg) | Mumbaimetro | CC BY-SA 4.0 | **Yes** — credit + link + share-alike |
-| `mumbai-township-aerial.jpg` | [Navi Mumbai Skyline](https://commons.wikimedia.org/wiki/File:Navi_Mumbai_Skyline.jpg) | Anurupa Chowdhury | CC BY 3.0 | **Yes** — credit + link |
-| `mumbai-residential.jpg` | [Raheja Vivera Mumbai](https://commons.wikimedia.org/wiki/File:Raheja_Vivera_Mumbai.jpg) | Creater903a | CC0 | No |
-| `mumbai-towers.jpg` | [A skyscraper in Mumbai from railway station](https://commons.wikimedia.org/wiki/File:A_skyscraper_in_Mumbai_from_railway_station.jpg) | Nicolas Vigier | CC0 | No |
+All four below are used as gallery tiles, flagged *Representative image* on the
+cards (they show the Mumbai region, not this project):
+
+| File | Gallery tile | Source | Author | Licence | Attribution required |
+|---|---|---|---|---|---|
+| `mumbai-metro.jpg` | Amenities | [Mumbai Metro at Gundavali Station](https://commons.wikimedia.org/wiki/File:Mumbai_Metro_at_Gundavali_Station.jpg) | Mumbaimetro | CC BY-SA 4.0 | **Yes** — credit + link + share-alike |
+| `mumbai-township-aerial.jpg` | Open Spaces | [Navi Mumbai Skyline](https://commons.wikimedia.org/wiki/File:Navi_Mumbai_Skyline.jpg) | Anurupa Chowdhury | CC BY 3.0 | **Yes** — credit + link |
+| `mumbai-residential.jpg` | Exterior Views | [Raheja Vivera Mumbai](https://commons.wikimedia.org/wiki/File:Raheja_Vivera_Mumbai.jpg) | Creater903a | CC0 | No |
+| `mumbai-ganesha-temple.jpg` | Temple | [Shree Siddhivinayak Mandir](https://commons.wikimedia.org/wiki/File:Shree_Siddhivinayak_Mandir.jpg) | User:L1CENSET0K1LL | Public domain | No |
+| `pool.jpg` | Swimming Pool | [Southern Palms - Pool 2](https://commons.wikimedia.org/w/index.php?curid=29178117) | John Hickey-Fry | CC BY 2.0 | **Yes** — credit + link |
+
+`mumbai-towers.jpg` is downloaded but no longer used in the gallery (kept as a spare).
 
 ## Project render (client-supplied)
 
@@ -49,6 +55,7 @@ card. Swap it for the project's own temple render when available.
 
 ## Still needed from the client
 
-One gallery category still renders a placeholder tile: **Swimming Pool**. The
-township render does show a pool inside the clubhouse courtyard, but at roughly
-50 × 40 pixels it is far too small to crop usefully.
+Every gallery tile now has an image. The **Swimming Pool** tile uses a
+representative resort pool (not this project) — swap it for the development's own
+pool render when available. The township render does contain a pool inside the
+clubhouse courtyard, but at roughly 50 × 40 pixels it is too small to crop.

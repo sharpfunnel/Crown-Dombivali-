@@ -121,11 +121,6 @@ export function Gallery() {
                         <span className="mt-1 block font-semibold text-paper">
                           {item.caption}
                         </span>
-                        {item.representative && (
-                          <span className="mt-1 block text-[0.68rem] text-paper/50">
-                            Representative image
-                          </span>
-                        )}
                       </span>
                       <span className="absolute top-4 right-4 flex h-10 w-10 translate-y-2 items-center justify-center bg-paper text-ink opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100">
                         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>

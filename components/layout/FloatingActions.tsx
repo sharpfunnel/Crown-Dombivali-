@@ -41,9 +41,14 @@ export function FloatingActions() {
         </a>
         <a
           href="#lead-form"
-          className="flex h-13 items-center justify-center bg-paper px-4 text-xs font-bold tracking-wide text-ink uppercase shadow-lg transition-colors duration-300 hover:bg-accent hover:text-white"
+          aria-label="Book a site visit"
+          title="Book a site visit"
+          className="group/tip relative flex h-13 w-13 items-center justify-center bg-paper text-ink shadow-lg transition-colors duration-300 hover:bg-accent hover:text-white"
         >
-          Book Visit
+          <CalendarIcon className="h-5 w-5" />
+          <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap bg-ink px-3 py-2 text-xs font-semibold tracking-wide text-paper uppercase opacity-0 shadow-lg transition-opacity duration-200 group-hover/tip:opacity-100 lg:block">
+            Book Visit
+          </span>
         </a>
 
         <AnimatePresence>
@@ -95,14 +100,7 @@ export function FloatingActions() {
           href="#lead-form"
           className="flex flex-col items-center justify-center gap-1 bg-accent py-3 text-[0.7rem] font-bold text-white uppercase"
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M4 6h16M4 12h16M4 18h10"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <CalendarIcon className="h-5 w-5" />
           Enquire
         </a>
       </div>
@@ -110,5 +108,24 @@ export function FloatingActions() {
       {/* Keeps the sticky bar from covering the end of the page on mobile. */}
       <div aria-hidden className="h-[68px] lg:hidden" />
     </>
+  );
+}
+
+/** Calendar with a tick — the "book a visit" action. */
+function CalendarIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <rect x="3.5" y="5" width="17" height="16" rx="2" />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4M9 15l2 2 3.5-3.5" />
+    </svg>
   );
 }

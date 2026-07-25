@@ -26,15 +26,15 @@ export const project = {
     encodeURIComponent("Premier Colony Ground, Kalyan-Shil Road, Dombivli 421203") +
     // z=17 → street level, so shop names and the surrounding roads are legible.
     "&t=&z=17&ie=UTF8&iwloc=B&output=embed",
-  phone: "+91 90000 00000",
-  phoneHref: "+919000000000",
+  phone: "+91 80972 66930",
+  phoneHref: "+918097266930",
   whatsappHref:
-    "https://wa.me/919000000000?text=" +
+    "https://wa.me/918097266930?text=" +
     encodeURIComponent(
       "Hi, I'm interested in Crown Dombivli Manpada. Please share the price sheet and brochure.",
     ),
   email: "sales@crowndombivli.com",
-  brochureHref: "#lead-form",
+  brochureHref: "/crown-dombivli-brochure.pdf",
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -362,8 +362,9 @@ export const galleryCategories = [
   "Exterior Views",
 ];
 
-/* One image per category. Views are taken from the project's own township
-   render, so the gallery shows this development rather than stock imagery. */
+/* Every tile is a distinct image — the three project categories use the
+   township render, and the wider-context tiles use real Mumbai-region
+   photography (flagged `representative`). No image repeats. */
 export const gallery: GalleryItem[] = [
   {
     category: "Project Elevation",
@@ -372,16 +373,21 @@ export const gallery: GalleryItem[] = [
   },
   {
     category: "Clubhouse",
-    caption: "Grand clubhouse",
+    caption: "Grand clubhouse and sports courts",
     image: "/images/render-clubhouse.jpg",
   },
   {
     category: "Temple",
-    caption: "Ganesha temple",
+    caption: "Temple within the township",
     image: "/images/mumbai-ganesha-temple.jpg",
     representative: true,
   },
-  { category: "Swimming Pool", caption: "Swimming pool", image: null },
+  {
+    category: "Swimming Pool",
+    caption: "Resort-style swimming pool",
+    image: "/images/pool.jpg",
+    representative: true,
+  },
   {
     category: "Gardens",
     caption: "Landscaped gardens and walkways",
@@ -389,19 +395,21 @@ export const gallery: GalleryItem[] = [
   },
   {
     category: "Open Spaces",
-    caption: "Sports ground and play areas",
-    image: "/images/render-sports.jpg",
+    caption: "The wider Mumbai metropolitan region",
+    image: "/images/mumbai-township-aerial.jpg",
+    representative: true,
   },
   {
     category: "Amenities",
-    caption: "Retail plaza and common areas",
-    image: "/images/amenities.png",
+    caption: "Mumbai Metro connectivity",
+    image: "/images/mumbai-metro.jpg",
     representative: true,
   },
   {
     category: "Exterior Views",
-    caption: "Approach from Kalyan-Shil Road",
-    image: "/images/render-exterior.jpg",
+    caption: "Mumbai residential neighbourhood",
+    image: "/images/mumbai-residential.jpg",
+    representative: true,
   },
 ];
 

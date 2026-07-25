@@ -121,7 +121,12 @@ export function Hero() {
             <Button href="#lead-form" variant="accent" icon={false} className="px-8">
               Book Free Site Visit
             </Button>
-            <Button href="#lead-form" variant="ghost" icon={false} className="px-8">
+            <Button
+              href={project.brochureHref}
+              variant="ghost"
+              download
+              className="px-8"
+            >
               Download Brochure
             </Button>
           </motion.div>
