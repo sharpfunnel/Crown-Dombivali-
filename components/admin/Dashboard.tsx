@@ -2,21 +2,25 @@
 
 import { useState } from "react";
 import type {
+  ClickPoint,
   CountRow,
   LeadRow,
   Overview,
   ScrollBucket,
+  SectionMarker,
   SessionRow,
   SourceRow,
 } from "@/lib/analytics";
+import { ClickMap } from "@/components/admin/ClickMap";
 
-type Tab = "overview" | "leads" | "behaviour" | "sessions";
+type Tab = "overview" | "leads" | "behaviour" | "sessions" | "heatmap";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "leads", label: "Leads" },
   { id: "behaviour", label: "Behaviour" },
   { id: "sessions", label: "Sessions" },
+  { id: "heatmap", label: "Heatmap" },
 ];
 
 const SECTION_LABEL: Record<string, string> = {
@@ -42,6 +46,8 @@ export function Dashboard({
   ctas,
   sectionReach,
   scroll,
+  clickPoints,
+  sectionMarkers,
 }: {
   overview: Overview;
   sources: SourceRow[];
@@ -50,6 +56,8 @@ export function Dashboard({
   ctas: CountRow[];
   sectionReach: CountRow[];
   scroll: ScrollBucket[];
+  clickPoints: ClickPoint[];
+  sectionMarkers: SectionMarker[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const counts: Record<Tab, number | null> = {
@@ -57,6 +65,7 @@ export function Dashboard({
     leads: leads.length,
     behaviour: null,
     sessions: sessions.length,
+    heatmap: null,
   };
 
   return (
@@ -214,6 +223,17 @@ export function Dashboard({
             scroll
           />
         </Card>
+      )}
+
+      {tab === "heatmap" && (
+        <div>
+          <p className="mb-5 max-w-2xl text-sm text-white/50">
+            Where visitors tap and click, across all sessions. Dashed lines mark
+            each section&apos;s position down the page. Mobile and desktop layouts
+            differ — use the device filter to read them separately.
+          </p>
+          <ClickMap points={clickPoints} markers={sectionMarkers} />
+        </div>
       )}
     </div>
   );
