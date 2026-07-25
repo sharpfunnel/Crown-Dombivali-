@@ -176,7 +176,13 @@ export function Tracker() {
     document.addEventListener("click", onClick, true);
 
     /* ---- periodic + on-hide flush -------------------------------------- */
-    const interval = window.setInterval(() => flush(), 8000);
+    // Heartbeat: record elapsed time each tick so duration is accurate even
+    // when a visitor leaves without a clean pagehide (server keeps the max).
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      push({ type: "time", value: Date.now() - start });
+      flush();
+    }, 15000);
     let ended = false;
     const end = () => {
       if (ended) return;

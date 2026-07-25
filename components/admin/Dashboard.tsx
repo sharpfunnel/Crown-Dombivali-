@@ -229,11 +229,14 @@ function mins(ms: number) {
   return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
 }
 function when(iso: string) {
+  // Always render in IST, regardless of where the server runs (Vercel = UTC).
   return new Date(iso).toLocaleString("en-IN", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
   });
 }
 function geo(city: string | null, country: string | null) {
