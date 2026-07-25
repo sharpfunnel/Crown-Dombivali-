@@ -74,6 +74,12 @@ export async function POST(request: Request) {
 
   const ua = h.get("user-agent");
   const parsed = parseUa(ua);
+
+  // Drop known bots outright — never touch the DB for them.
+  if (parsed.device === "bot") {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const ctx: RequestContext = {
     ip: firstIp(h.get("x-forwarded-for")) ?? h.get("x-real-ip"),
     country: h.get("x-vercel-ip-country"),
@@ -88,6 +94,14 @@ export async function POST(request: Request) {
     screenW: num(body.context?.screenW),
     screenH: num(body.context?.screenH),
   };
+
+  // Campaign is India-targeted; foreign traffic has been exclusively datacenter
+  // bots (e.g. AWS "San Jose"). Skip recording it. To allow other countries,
+  // change TARGET_COUNTRY or remove this block. Null geo (local dev) is allowed.
+  const TARGET_COUNTRY = "IN";
+  if (ctx.country && ctx.country !== TARGET_COUNTRY) {
+    return new NextResponse(null, { status: 204 });
+  }
 
   const events = Array.isArray(body.events) ? body.events.slice(0, 50) : [];
 
