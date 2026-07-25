@@ -92,10 +92,21 @@ export function Tracker() {
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const id = entry.target.id;
+          const el = entry.target as HTMLElement;
+          const id = el.id;
           if (entry.isIntersecting && id && !seenSections.has(id)) {
             seenSections.add(id);
-            push({ type: "section_view", label: id, path: context.path });
+            // Store the section's normalised top so the click-map can draw
+            // labelled guide lines at the right height.
+            const docH = document.documentElement.scrollHeight;
+            const absTop = el.getBoundingClientRect().top + window.scrollY;
+            const top = Math.round((absTop / docH) * 1000);
+            push({
+              type: "section_view",
+              label: id,
+              path: context.path,
+              meta: { y: top },
+            });
           }
         }
       },
@@ -134,25 +145,33 @@ export function Tracker() {
           : "lead";
     };
 
+    let clickCount = 0;
     const onClick = (e: MouseEvent) => {
+      // Cap per-session clicks so a rage-clicker can't flood the table.
+      if (clickCount >= 200) return;
+      clickCount++;
+
       const target = e.target as HTMLElement;
-      const label = ctaLabel(target);
-      if (!label) return;
+      const label = ctaLabel(target); // null for non-CTA clicks
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      // Normalised coords (0–1000) keep the click-map resolution-independent.
+      const meta = {
+        x: Math.round((e.clientX / vw) * 1000),
+        y: Math.round(
+          ((e.clientY + window.scrollY) / document.documentElement.scrollHeight) *
+            1000,
+        ),
+        vw,
+        vh,
+      };
       push({
-        type: "cta_click",
-        label,
+        type: label ? "cta_click" : "click",
+        label: label ?? null,
         path: context.path,
-        // Normalised coords (0–1000) keep the click-map resolution-independent.
-        meta: {
-          x: Math.round((e.clientX / vw) * 1000),
-          y: Math.round(((e.clientY + window.scrollY) / document.documentElement.scrollHeight) * 1000),
-          vw,
-          vh,
-        },
+        meta,
       });
-      flush(); // clicks are high-intent — send promptly
+      if (label) flush(); // CTA clicks are high-intent — send promptly
     };
     document.addEventListener("click", onClick, true);
 

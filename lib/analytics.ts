@@ -205,6 +205,31 @@ export async function attributeLead(
   await sql`UPDATE leads SET session_id = ${sessionId}, visitor_id = ${visitorId} WHERE id = ${leadId}`;
 }
 
+/**
+ * Retention cleanup — raw events are the high-volume table, so purge them after
+ * `days`. Session/visitor rollups (scroll, cta counts, duration) are already
+ * aggregated on the row, so trends survive; only granular event history is lost.
+ * Sessions with no events for a long time are trimmed too.
+ */
+export async function purgeOldData(days = 90): Promise<{
+  events: number;
+  sessions: number;
+}> {
+  await ensureAnalyticsSchema();
+  const ev = await sql`
+    DELETE FROM events WHERE created_at < now() - (${days} || ' days')::interval
+  `;
+  const ss = await sql`
+    DELETE FROM sessions
+    WHERE started_at < now() - (${days} || ' days')::interval
+      AND NOT converted
+  `;
+  return {
+    events: (ev as unknown as { count?: number }).count ?? 0,
+    sessions: (ss as unknown as { count?: number }).count ?? 0,
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Admin dashboard queries                                                    */
 /* -------------------------------------------------------------------------- */
@@ -397,6 +422,49 @@ export async function getScrollBuckets(): Promise<ScrollBucket[]> {
     { band: "75–99%", sessions: Number(r.b75) },
     { band: "100%", sessions: Number(r.b100) },
   ];
+}
+
+export type ClickPoint = {
+  x: number;
+  y: number;
+  device: string | null;
+  label: string | null;
+};
+
+/** All click coordinates for the heatmap (CTA and non-CTA). */
+export async function getClickPoints(limit = 5000): Promise<ClickPoint[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT (e.meta->>'x')::int AS x, (e.meta->>'y')::int AS y,
+           s.device AS device, e.label AS label
+    FROM events e
+    LEFT JOIN sessions s ON s.id = e.session_id
+    WHERE e.type IN ('click', 'cta_click')
+      AND e.meta ? 'x' AND e.meta ? 'y'
+    ORDER BY e.created_at DESC
+    LIMIT ${limit}
+  `;
+  return rows.map((r) => ({
+    x: Number(r.x),
+    y: Number(r.y),
+    device: r.device,
+    label: r.label,
+  }));
+}
+
+export type SectionMarker = { label: string; y: number };
+
+/** Average normalised top position of each section, for heatmap guide lines. */
+export async function getSectionMarkers(): Promise<SectionMarker[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT label, round(avg((meta->>'y')::numeric))::int AS y
+    FROM events
+    WHERE type = 'section_view' AND meta ? 'y' AND label IS NOT NULL
+    GROUP BY label
+    ORDER BY y
+  `;
+  return rows.map((r) => ({ label: r.label, y: Number(r.y) }));
 }
 
 export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
