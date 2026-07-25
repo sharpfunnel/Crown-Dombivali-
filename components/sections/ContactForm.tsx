@@ -1,12 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
 import { budgetOptions, configurations, project } from "@/lib/project";
+import { useLeadForm } from "@/lib/useLeadForm";
+import { SuccessTick } from "@/components/ui/SuccessTick";
+import { FieldError } from "@/components/ui/FieldError";
 
 export function ContactSection() {
   return (
@@ -108,35 +110,85 @@ function ContactDetails() {
 }
 
 function FullContactForm() {
-  const [sent, setSent] = useState(false);
+  const { submit, sending, sent, error, errors, clearError } = useLeadForm(
+    "contact",
+    ["name", "mobile", "email", "configuration"],
+  );
+
+  if (sent) {
+    return (
+      <div className="border border-accent/40 bg-ink-800 p-8">
+        <div className="flex flex-col items-center py-6 text-center">
+          <span className="text-accent">
+            <SuccessTick />
+          </span>
+          <p className="mt-5 text-xl font-bold text-paper">Enquiry received</p>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-paper/60">
+            Thank you — our team will call you back shortly with pricing and
+            availability.
+          </p>
+          <a
+            href={`tel:${project.phoneHref}`}
+            className="mt-6 inline-flex items-center gap-2 border border-white/20 px-5 py-3 text-sm font-semibold text-paper transition-colors hover:border-accent hover:text-accent"
+          >
+            Prefer to talk now? {project.phone}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        // Front-end only — point this at the CRM endpoint when available.
-        setSent(true);
+        submit(e.currentTarget);
       }}
       className="border border-white/12 bg-ink-800 p-6 sm:p-8"
     >
-      <fieldset disabled={sent} className="space-y-4">
+      <fieldset disabled={sending} className="space-y-4">
         <legend className="sr-only">Contact details</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Name" name="c-name" autoComplete="name" required />
+          <Field
+            label="Name"
+            name="name"
+            autoComplete="name"
+            required
+            error={errors.name}
+            onInput={() => clearError("name")}
+          />
           <Field
             label="Mobile"
-            name="c-mobile"
+            name="mobile"
             type="tel"
             inputMode="numeric"
+            maxLength={14}
             autoComplete="tel"
             required
+            error={errors.mobile}
+            onInput={() => clearError("mobile")}
           />
         </div>
-        <Field label="Email" name="c-email" type="email" autoComplete="email" required />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          error={errors.email}
+          onInput={() => clearError("email")}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Configuration" name="c-config" required>
+          <Select
+            label="Configuration"
+            name="configuration"
+            required
+            error={errors.configuration}
+            onChange={() => clearError("configuration")}
+          >
             {configurations.map((c) => (
               <option key={c.id} value={c.type} className="bg-ink-800">
                 {c.type}
@@ -146,7 +198,7 @@ function FullContactForm() {
               Both 1 & 2 BHK
             </option>
           </Select>
-          <Select label="Minimum Budget" name="c-budget">
+          <Select label="Minimum Budget" name="budget">
             {budgetOptions.map((b) => (
               <option key={b} value={b} className="bg-ink-800">
                 {b}
@@ -157,14 +209,14 @@ function FullContactForm() {
 
         <div>
           <label
-            htmlFor="c-message"
+            htmlFor="message"
             className="mb-1.5 block text-xs tracking-[0.12em] text-paper/40 uppercase"
           >
             Message
           </label>
           <textarea
-            id="c-message"
-            name="c-message"
+            id="message"
+            name="message"
             rows={4}
             placeholder="Anything specific you'd like to know?"
             className="w-full resize-none border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-paper placeholder:text-paper/30 focus:border-accent focus:outline-none"
@@ -173,26 +225,26 @@ function FullContactForm() {
 
         <button
           type="submit"
-          className="w-full bg-accent px-6 py-4 text-sm font-bold tracking-wide text-white uppercase transition-colors duration-200 hover:bg-accent-light"
+          className="w-full bg-accent px-6 py-4 text-sm font-bold tracking-wide text-white uppercase transition-colors duration-200 hover:bg-accent-light disabled:opacity-70"
         >
-          Submit
+          {sending ? "Sending…" : "Submit"}
         </button>
       </fieldset>
 
       <AnimatePresence>
-        {sent && (
-          <motion.div
+        {error && (
+          <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            role="status"
-            className="mt-5 border border-accent/40 bg-accent/12 p-5"
+            role="alert"
+            className="mt-5 border border-red-400/40 bg-red-500/10 p-5 text-sm leading-relaxed text-red-200"
           >
-            <p className="font-semibold text-paper">Enquiry received</p>
-            <p className="mt-1 text-sm leading-relaxed text-paper/65">
-              Thank you — our team will call you back shortly with pricing and
-              availability.
-            </p>
-          </motion.div>
+            Couldn&apos;t submit your enquiry. Please try again, or call{" "}
+            <a href={`tel:${project.phoneHref}`} className="font-semibold text-paper">
+              {project.phone}
+            </a>
+            .
+          </motion.p>
         )}
       </AnimatePresence>
     </form>
@@ -206,6 +258,9 @@ function Field({
   required,
   autoComplete,
   inputMode,
+  maxLength,
+  error,
+  onInput,
 }: {
   label: string;
   name: string;
@@ -213,6 +268,9 @@ function Field({
   required?: boolean;
   autoComplete?: string;
   inputMode?: "numeric" | "text";
+  maxLength?: number;
+  error?: string;
+  onInput?: () => void;
 }) {
   return (
     <div>
@@ -227,11 +285,18 @@ function Field({
         id={name}
         name={name}
         type={type}
-        required={required}
         autoComplete={autoComplete}
         inputMode={inputMode}
-        className="w-full border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-paper placeholder:text-paper/30 focus:border-accent focus:outline-none"
+        maxLength={maxLength}
+        onInput={onInput}
+        aria-invalid={!!error}
+        className={`w-full border bg-white/[0.03] px-4 py-3 text-sm text-paper placeholder:text-paper/30 focus:outline-none ${
+          error
+            ? "border-red-400/70 focus:border-red-400"
+            : "border-white/15 focus:border-accent"
+        }`}
       />
+      <FieldError message={error} />
     </div>
   );
 }
@@ -240,11 +305,15 @@ function Select({
   label,
   name,
   required,
+  error,
+  onChange,
   children,
 }: {
   label: string;
   name: string;
   required?: boolean;
+  error?: string;
+  onChange?: () => void;
   children: React.ReactNode;
 }) {
   return (
@@ -259,15 +328,21 @@ function Select({
       <select
         id={name}
         name={name}
-        required={required}
+        onChange={onChange}
+        aria-invalid={!!error}
         defaultValue=""
-        className="w-full appearance-none border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-paper focus:border-accent focus:outline-none"
+        className={`w-full appearance-none border bg-white/[0.03] px-4 py-3 text-sm text-paper focus:outline-none ${
+          error
+            ? "border-red-400/70 focus:border-red-400"
+            : "border-white/15 focus:border-accent"
+        }`}
       >
         <option value="" disabled className="bg-ink-800">
           Select
         </option>
         {children}
       </select>
+      <FieldError message={error} />
     </div>
   );
 }
