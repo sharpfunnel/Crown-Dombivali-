@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { insertLead, type LeadInput, type LeadSource } from "@/lib/db";
+import { attributeLead } from "@/lib/analytics";
 
 // Leads are written per request — never prerender or cache this handler.
 export const dynamic = "force-dynamic";
@@ -55,6 +56,17 @@ export async function POST(request: Request) {
 
   try {
     const saved = await insertLead(lead);
+    // Attribute the lead to its visitor journey (best-effort, never blocks).
+    try {
+      const cookies = request.headers.get("cookie") ?? "";
+      const get = (n: string) =>
+        cookies.match(new RegExp(`(?:^|;\\s*)${n}=([^;]+)`))?.[1] ?? null;
+      const sid = get("cds_sid");
+      const vid = get("cds_vid");
+      if (sid || vid) await attributeLead(saved.id, sid, vid);
+    } catch (e) {
+      console.error("[leads] attribution failed:", e);
+    }
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
   } catch (err) {
     // Log server-side; never leak DB details to the client.
