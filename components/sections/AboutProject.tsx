@@ -40,7 +40,7 @@ export function AboutProject() {
             <div className="mt-9 grid grid-cols-3 gap-5 border-t border-white/10 pt-8">
               <Stat value={17} suffix="" label="Acre township" />
               <Stat value={2} suffix="" label="Configurations" />
-              <Stat value={0} suffix=" min" label="To metro station" />
+              <Stat value={25} suffix="+" label="Lifestyle amenities" />
             </div>
           </div>
         </div>

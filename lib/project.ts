@@ -294,11 +294,11 @@ export const temple = {
 /* -------------------------------------------------------------------------- */
 
 export const locationHighlights = [
-  { place: "Metro Station", distance: "0 Minutes", icon: "metro" as const },
+  { place: "Metro Station", distance: "At doorstep", icon: "metro" as const },
   { place: "Jupiter Hospital", distance: "Nearby", icon: "hospital" as const },
   {
     place: "Thane Bullet Train Station",
-    distance: "4 KM",
+    distance: "4 KM away",
     icon: "train" as const,
   },
 ];
