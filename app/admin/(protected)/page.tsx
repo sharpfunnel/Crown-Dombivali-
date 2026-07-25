@@ -2,6 +2,9 @@ import {
   getLeads,
   getOverview,
   getRecentSessions,
+  getScrollBuckets,
+  getSectionReach,
+  getTopCtas,
   getTrafficSources,
 } from "@/lib/analytics";
 
@@ -31,12 +34,32 @@ function geo(city: string | null, country: string | null) {
 }
 
 export default async function AdminDashboard() {
-  const [overview, sources, leads, sessions] = await Promise.all([
-    getOverview(),
-    getTrafficSources(),
-    getLeads(100),
-    getRecentSessions(50),
-  ]);
+  const [overview, sources, leads, sessions, ctas, sectionReach, scroll] =
+    await Promise.all([
+      getOverview(),
+      getTrafficSources(),
+      getLeads(100),
+      getRecentSessions(50),
+      getTopCtas(),
+      getSectionReach(),
+      getScrollBuckets(),
+    ]);
+
+  // Nicer section labels for the reach table.
+  const sectionName: Record<string, string> = {
+    top: "Hero",
+    about: "About",
+    pricing: "Pricing",
+    "floor-plans": "Floor plans",
+    amenities: "Amenities",
+    clubhouse: "Clubhouse",
+    temple: "Temple",
+    specifications: "Specifications",
+    location: "Location",
+    gallery: "Gallery",
+    faq: "FAQ",
+    contact: "Contact",
+  };
 
   const stats = [
     { label: "Visitors", value: fmt(overview.visitors) },
@@ -70,7 +93,7 @@ export default async function AdminDashboard() {
           <FunnelBar label="Sessions" value={overview.sessions} total={overview.sessions} />
           <FunnelBar label="Scrolled 50%+" value={overview.scrolled50} total={overview.sessions} />
           <FunnelBar label="Clicked a CTA" value={overview.ctaSessions} total={overview.sessions} />
-          <FunnelBar label="Submitted a lead" value={overview.leads} total={overview.sessions} />
+          <FunnelBar label="Converted (lead)" value={overview.convertedSessions} total={overview.sessions} />
         </div>
       </section>
 
@@ -88,6 +111,52 @@ export default async function AdminDashboard() {
           ])}
           empty="No sessions yet."
         />
+      </section>
+
+      {/* Behaviour — Phase 2 */}
+      <section className="grid gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="text-lg font-bold">CTA clicks</h2>
+          <Table
+            head={["Call-to-action", "Clicks", "Sessions"]}
+            rows={ctas.map((c) => [c.label, fmt(c.count), fmt(c.sessions)])}
+            empty="No CTA clicks recorded yet."
+          />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">Section reach</h2>
+          <div className="mt-4 space-y-2">
+            {sectionReach.length === 0 ? (
+              <p className="border border-white/10 px-4 py-8 text-center text-white/40">
+                No section views yet.
+              </p>
+            ) : (
+              sectionReach.map((s) => (
+                <FunnelBar
+                  key={s.label}
+                  label={sectionName[s.label] ?? s.label}
+                  value={s.sessions}
+                  total={overview.sessions}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Scroll distribution */}
+      <section>
+        <h2 className="text-lg font-bold">Scroll depth</h2>
+        <div className="mt-4 space-y-2">
+          {scroll.map((b) => (
+            <FunnelBar
+              key={b.band}
+              label={b.band}
+              value={b.sessions}
+              total={overview.sessions}
+            />
+          ))}
+        </div>
       </section>
 
       {/* Leads */}

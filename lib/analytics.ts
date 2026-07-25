@@ -213,6 +213,7 @@ export type Overview = {
   visitors: number;
   sessions: number;
   leads: number;
+  convertedSessions: number;
   scrolled50: number;
   ctaSessions: number;
   convRate: number;
@@ -226,19 +227,22 @@ export async function getOverview(): Promise<Overview> {
       (SELECT count(*) FROM visitors)                              AS visitors,
       (SELECT count(*) FROM sessions)                              AS sessions,
       (SELECT count(*) FROM leads)                                 AS leads,
+      (SELECT count(*) FROM sessions WHERE converted)              AS converted_sessions,
       (SELECT count(*) FROM sessions WHERE max_scroll >= 50)       AS scrolled50,
       (SELECT count(*) FROM sessions WHERE cta_clicks > 0)         AS cta_sessions,
       (SELECT COALESCE(avg(duration_ms),0) FROM sessions WHERE duration_ms > 0) AS avg_duration
   `;
   const sessions = Number(row.sessions) || 0;
-  const leads = Number(row.leads) || 0;
+  const converted = Number(row.converted_sessions) || 0;
   return {
     visitors: Number(row.visitors) || 0,
     sessions,
-    leads,
+    leads: Number(row.leads) || 0,
+    convertedSessions: converted,
     scrolled50: Number(row.scrolled50) || 0,
     ctaSessions: Number(row.cta_sessions) || 0,
-    convRate: sessions ? (leads / sessions) * 100 : 0,
+    // Session conversion rate — bounded 0–100%.
+    convRate: sessions ? (converted / sessions) * 100 : 0,
     avgDurationMs: Number(row.avg_duration) || 0,
   };
 }
@@ -334,6 +338,66 @@ export type SessionRow = {
   durationMs: number;
   converted: boolean;
 };
+
+export type CountRow = { label: string; count: number; sessions: number };
+
+/** Which CTAs get clicked, and by how many distinct sessions. */
+export async function getTopCtas(): Promise<CountRow[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT COALESCE(label, 'Unlabelled') AS label,
+           count(*)                      AS count,
+           count(DISTINCT session_id)    AS sessions
+    FROM events WHERE type = 'cta_click'
+    GROUP BY 1 ORDER BY count DESC LIMIT 20
+  `;
+  return rows.map((r) => ({
+    label: r.label,
+    count: Number(r.count),
+    sessions: Number(r.sessions),
+  }));
+}
+
+/** How many sessions actually saw each section (drop-off analysis). */
+export async function getSectionReach(): Promise<CountRow[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT label,
+           count(DISTINCT session_id) AS sessions,
+           count(*)                   AS count
+    FROM events WHERE type = 'section_view' AND label IS NOT NULL
+    GROUP BY 1 ORDER BY sessions DESC LIMIT 30
+  `;
+  return rows.map((r) => ({
+    label: r.label,
+    count: Number(r.count),
+    sessions: Number(r.sessions),
+  }));
+}
+
+export type ScrollBucket = { band: string; sessions: number };
+
+/** Distribution of how far sessions scrolled. */
+export async function getScrollBuckets(): Promise<ScrollBucket[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT
+      count(*) FILTER (WHERE max_scroll < 25)                       AS b0,
+      count(*) FILTER (WHERE max_scroll >= 25 AND max_scroll < 50)  AS b25,
+      count(*) FILTER (WHERE max_scroll >= 50 AND max_scroll < 75)  AS b50,
+      count(*) FILTER (WHERE max_scroll >= 75 AND max_scroll < 100) AS b75,
+      count(*) FILTER (WHERE max_scroll >= 100)                     AS b100
+    FROM sessions
+  `;
+  const r = rows[0];
+  return [
+    { band: "0–25%", sessions: Number(r.b0) },
+    { band: "25–50%", sessions: Number(r.b25) },
+    { band: "50–75%", sessions: Number(r.b50) },
+    { band: "75–99%", sessions: Number(r.b75) },
+    { band: "100%", sessions: Number(r.b100) },
+  ];
+}
 
 export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
   await ensureAnalyticsSchema();
