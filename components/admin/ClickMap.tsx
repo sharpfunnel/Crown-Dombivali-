@@ -21,10 +21,11 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 /**
- * Click heatmap. Points are stored normalised (0–1000 on both axes), so we map
- * them onto a fixed-ratio canvas: x = width of the page, y = full scroll height.
- * Heat is drawn additively then colour-mapped, with labelled guide lines at each
- * section's average position.
+ * Click heatmap overlaid on a live preview of the site, so each hot spot can be
+ * read against the real page. Coordinates are stored normalised (0–1000 on both
+ * axes); we map them onto the embedded page's rendered width/height. The site is
+ * loaded in a same-origin iframe (its tracker skips embedded contexts), scaled
+ * to fit the panel.
  */
 export function ClickMap({
   points,
@@ -34,7 +35,15 @@ export function ClickMap({
   markers: SectionMarker[];
 }) {
   const [device, setDevice] = useState<Device>("all");
+  const [showPage, setShowPage] = useState(true);
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const frameWidth = device === "mobile" ? 390 : 1200;
+  const [frameHeight, setFrameHeight] = useState(2600);
+  const [scale, setScale] = useState(1);
 
   const filtered = useMemo(
     () =>
@@ -44,28 +53,51 @@ export function ClickMap({
     [points, device],
   );
 
-  const WIDTH = 700;
-  const HEIGHT = 2400; // tall canvas representing the full page
+  // Fit the fixed-width preview into the available panel width.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setScale(Math.min(1, el.clientWidth / frameWidth));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [frameWidth]);
 
+  // Read the embedded page's real height so the overlay lines up.
+  const onFrameLoad = () => {
+    try {
+      const doc = iframeRef.current?.contentWindow?.document;
+      if (doc) {
+        const h = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body.scrollHeight,
+        );
+        setFrameHeight(h);
+      }
+    } catch {
+      /* same-origin expected; ignore if blocked */
+    }
+  };
+
+  // Draw the heat.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    ctx.clearRect(0, 0, frameWidth, frameHeight);
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-    // 1) Accumulate additive heat into an offscreen buffer.
     const heat = document.createElement("canvas");
-    heat.width = WIDTH;
-    heat.height = HEIGHT;
+    heat.width = frameWidth;
+    heat.height = frameHeight;
     const hctx = heat.getContext("2d")!;
-    const radius = 26;
+    const radius = Math.round(frameWidth * 0.02);
     for (const p of filtered) {
-      const x = (p.x / 1000) * WIDTH;
-      const y = (p.y / 1000) * HEIGHT;
+      const x = (p.x / 1000) * frameWidth;
+      const y = (p.y / 1000) * frameHeight;
       const g = hctx.createRadialGradient(x, y, 0, x, y, radius);
-      g.addColorStop(0, "rgba(0,0,0,0.16)");
+      g.addColorStop(0, "rgba(0,0,0,0.18)");
       g.addColorStop(1, "rgba(0,0,0,0)");
       hctx.fillStyle = g;
       hctx.beginPath();
@@ -73,8 +105,7 @@ export function ClickMap({
       hctx.fill();
     }
 
-    // 2) Colour-map the alpha channel: blue → green → yellow → red.
-    const img = hctx.getImageData(0, 0, WIDTH, HEIGHT);
+    const img = hctx.getImageData(0, 0, frameWidth, frameHeight);
     const d = img.data;
     for (let i = 0; i < d.length; i += 4) {
       const a = d[i + 3] / 255;
@@ -84,30 +115,42 @@ export function ClickMap({
       d[i] = r;
       d[i + 1] = g;
       d[i + 2] = b;
-      d[i + 3] = Math.min(255, a * 520);
+      d[i + 3] = Math.min(255, a * 560);
     }
     hctx.putImageData(img, 0, 0);
     ctx.drawImage(heat, 0, 0);
-  }, [filtered]);
+  }, [filtered, frameWidth, frameHeight]);
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-2">
-        {(["all", "desktop", "mobile"] as Device[]).map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => setDevice(d)}
-            className={`border px-4 py-2 text-sm font-semibold capitalize transition-colors ${
-              device === d
-                ? "border-accent bg-accent text-white"
-                : "border-white/15 text-white/60 hover:text-white"
-            }`}
-          >
-            {d}
-          </button>
-        ))}
-        <span className="ml-2 text-sm text-white/45">
+      {/* Toolbar */}
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="flex gap-px overflow-hidden rounded border border-white/12">
+          {(["all", "desktop", "mobile"] as Device[]).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDevice(d)}
+              className={`px-4 py-2 text-sm font-semibold capitalize transition-colors ${
+                device === d ? "bg-accent text-white" : "bg-white/[0.03] text-white/60 hover:text-white"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-white/60 select-none">
+          <input
+            type="checkbox"
+            checked={showPage}
+            onChange={(e) => setShowPage(e.target.checked)}
+            className="h-4 w-4 accent-accent"
+          />
+          Show page
+        </label>
+
+        <span className="ml-auto text-sm text-white/45">
           {filtered.length.toLocaleString("en-IN")} clicks
         </span>
       </div>
@@ -118,29 +161,65 @@ export function ClickMap({
           appear here.
         </p>
       ) : (
-        <div
-          className="relative mx-auto border border-white/10 bg-[#0e1626]"
-          style={{ width: WIDTH, maxWidth: "100%" }}
-        >
-          {/* Section guide lines */}
-          {markers.map((m) => (
+        <div ref={wrapRef} className="w-full overflow-hidden">
+          <div
+            className="relative mx-auto"
+            style={{
+              width: frameWidth * scale,
+              height: frameHeight * scale,
+            }}
+          >
             <div
-              key={m.label}
-              className="pointer-events-none absolute inset-x-0 flex items-center"
-              style={{ top: `${(m.y / 1000) * 100}%` }}
+              className="absolute top-0 left-0 origin-top-left"
+              style={{
+                width: frameWidth,
+                height: frameHeight,
+                transform: `scale(${scale})`,
+              }}
             >
-              <span className="w-full border-t border-dashed border-white/15" />
-              <span className="absolute left-2 -translate-y-1/2 bg-[#0e1626] px-1.5 text-[0.65rem] tracking-wide text-white/45 uppercase">
-                {SECTION_LABELS[m.label] ?? m.label}
-              </span>
+              {/* Live site preview */}
+              <iframe
+                ref={iframeRef}
+                src="/?preview=1"
+                title="Site preview"
+                onLoad={onFrameLoad}
+                scrolling="no"
+                tabIndex={-1}
+                style={{
+                  width: frameWidth,
+                  height: frameHeight,
+                  border: 0,
+                  pointerEvents: "none",
+                  opacity: showPage ? 1 : 0,
+                }}
+              />
+              {/* Dim so heat reads on top */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: showPage ? "rgba(9,16,28,0.55)" : "#0e1626" }}
+              />
+              {/* Section guide lines */}
+              {markers.map((m) => (
+                <div
+                  key={m.label}
+                  className="pointer-events-none absolute inset-x-0"
+                  style={{ top: (m.y / 1000) * frameHeight }}
+                >
+                  <span className="block border-t border-dashed border-white/25" />
+                  <span className="absolute left-2 -translate-y-1/2 bg-[#0e1626] px-1.5 text-[0.65rem] tracking-wide text-white/60 uppercase">
+                    {SECTION_LABELS[m.label] ?? m.label}
+                  </span>
+                </div>
+              ))}
+              {/* Heat */}
+              <canvas
+                ref={canvasRef}
+                width={frameWidth}
+                height={frameHeight}
+                className="pointer-events-none absolute inset-0"
+              />
             </div>
-          ))}
-          <canvas
-            ref={canvasRef}
-            width={WIDTH}
-            height={HEIGHT}
-            className="block h-auto w-full"
-          />
+          </div>
         </div>
       )}
 
@@ -149,7 +228,6 @@ export function ClickMap({
   );
 }
 
-/** Perceptual-ish heat ramp: blue → cyan → green → yellow → red. */
 function ramp(t: number): [number, number, number] {
   const stops: [number, [number, number, number]][] = [
     [0.0, [30, 90, 200]],

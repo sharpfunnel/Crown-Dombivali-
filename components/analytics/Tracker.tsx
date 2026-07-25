@@ -15,6 +15,8 @@ import { useEffect } from "react";
 export function Tracker() {
   useEffect(() => {
     if (window.location.pathname.startsWith("/admin")) return;
+    // Don't track when the page is embedded (e.g. the admin heatmap preview).
+    if (window.self !== window.top) return;
     // Skip automated browsers (Puppeteer / Selenium / headless monitors set
     // navigator.webdriver). This is what filters the datacenter "San Jose" bots.
     if (navigator.webdriver) return;
