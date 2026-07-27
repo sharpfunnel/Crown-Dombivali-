@@ -151,24 +151,60 @@ function Row({ label, value }: { label: string; value: string }) {
 const wall = { stroke: "#f5f5f5", strokeWidth: 2.5, fill: "none" } as const;
 const inner = { stroke: "#f5f5f580", strokeWidth: 1.5, fill: "none" } as const;
 
-function PlanLabel({ x, y, name, size }: { x: number; y: number; name: string; size: string }) {
+function PlanLabel({
+  x,
+  y,
+  name,
+  size,
+}: {
+  x: number;
+  y: number;
+  name: string;
+  size: string;
+}) {
   return (
     <g>
       <text
         x={x}
         y={y}
         textAnchor="middle"
-        className="fill-paper text-[11px] font-semibold"
+        className="fill-paper text-[10.5px] font-semibold"
       >
         {name}
       </text>
       <text
         x={x}
-        y={y + 14}
+        y={y + 13}
         textAnchor="middle"
-        className="fill-accent text-[9.5px]"
+        className="fill-accent text-[9px]"
       >
         {size}
+      </text>
+    </g>
+  );
+}
+
+/** Entry door marker, drawn in the bottom margin so it never overlaps a room. */
+function Entry({ x }: { x: number }) {
+  return (
+    <g>
+      <path
+        d={`M${x - 9} 300h18`}
+        stroke="#ee6123"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M${x} 306 l4 6 h-8 z`}
+        className="fill-accent"
+      />
+      <text
+        x={x}
+        y={324}
+        textAnchor="middle"
+        className="fill-accent text-[8.5px] font-semibold tracking-[0.14em]"
+      >
+        ENTRY
       </text>
     </g>
   );
@@ -177,7 +213,7 @@ function PlanLabel({ x, y, name, size }: { x: number; y: number; name: string; s
 function PlanOneBhk() {
   return (
     <svg
-      viewBox="0 0 420 320"
+      viewBox="0 0 420 336"
       className="h-auto w-full"
       role="img"
       aria-label="1 BHK typical unit plan, 322 square feet carpet area"
@@ -185,23 +221,20 @@ function PlanOneBhk() {
       <rect x="20" y="20" width="380" height="280" {...wall} />
       {/* living room — top left */}
       <path d="M20 20h215v170H20" {...inner} />
-      <PlanLabel x={127} y={95} name="LIVING ROOM" size="10′0″ × 11′3″" />
+      <PlanLabel x={127} y={98} name="LIVING ROOM" size="10′0″ × 11′3″" />
       {/* bedroom — top right */}
       <path d="M235 20v170h165" {...inner} />
-      <PlanLabel x={317} y={95} name="BEDROOM" size="9′0″ × 9′3″" />
+      <PlanLabel x={317} y={98} name="BEDROOM" size="9′0″ × 9′3″" />
       {/* toilet — bottom left */}
-      <path d="M20 190h95v110" {...inner} />
-      <PlanLabel x={67} y={240} name="TOILET" size="4′0″ × 6′4″" />
-      {/* foyer — bottom centre */}
-      <path d="M115 190v110h95" {...inner} />
-      <PlanLabel x={162} y={240} name="FOYER" size="3′5″ wide" />
+      <path d="M20 190h90v110" {...inner} />
+      <PlanLabel x={65} y={242} name="TOILET" size="4′0″ × 6′4″" />
+      {/* foyer — entry area */}
+      <path d="M110 190v110" {...inner} />
+      <PlanLabel x={158} y={242} name="FOYER" size="3′5″ wide" />
       {/* kitchen — bottom right */}
-      <path d="M210 190v110h110" {...inner} />
-      <PlanLabel x={265} y={240} name="KITCHEN" size="6′6″ × 4′7″" />
-      {/* bath — far bottom right */}
-      <PlanLabel x={360} y={240} name="BATH" size="4′0″ × 3′5″" />
-      <circle cx="20" cy="265" r="4" className="fill-accent" />
-      <text x="32" y="269" className="fill-paper/60 text-[9px]">ENTRY</text>
+      <path d="M205 190v110h195" {...inner} />
+      <PlanLabel x={303} y={242} name="KITCHEN" size="6′6″ × 4′7″" />
+      <Entry x={158} />
     </svg>
   );
 }
@@ -209,7 +242,7 @@ function PlanOneBhk() {
 function PlanTwoBhk() {
   return (
     <svg
-      viewBox="0 0 420 320"
+      viewBox="0 0 420 336"
       className="h-auto w-full"
       role="img"
       aria-label="2 BHK typical unit plan, 487 square feet carpet area"
@@ -226,18 +259,17 @@ function PlanTwoBhk() {
       <PlanLabel x={350} y={58} name="MASTER WC" size="4′4″ × 7′0″" />
       {/* utility — left */}
       <path d="M20 105h85v55" {...inner} />
-      <PlanLabel x={62} y={132} name="UTILITY" size="5′0″ × 3′0″" />
+      <PlanLabel x={62} y={137} name="UTILITY" size="5′0″ × 3′0″" />
       {/* bedroom 02 — bottom left */}
       <path d="M20 160h150v140" {...inner} />
-      <PlanLabel x={95} y={222} name="BEDROOM 02" size="9′0″ × 9′6″" />
+      <PlanLabel x={95} y={228} name="BEDROOM 02" size="9′0″ × 9′6″" />
       {/* living room — centre */}
       <path d="M170 105v195h115" {...inner} />
-      <PlanLabel x={228} y={200} name="LIVING ROOM" size="10′0″ × 12′10″" />
+      <PlanLabel x={228} y={205} name="LIVING ROOM" size="10′0″ × 12′10″" />
       {/* master bedroom — right */}
       <path d="M285 105v195" {...inner} />
-      <PlanLabel x={343} y={200} name="MASTER BED" size="9′0″ × 9′6″" />
-      <circle cx="20" cy="135" r="4" className="fill-accent" />
-      <text x="32" y="139" className="fill-paper/60 text-[9px]">ENTRY</text>
+      <PlanLabel x={343} y={205} name="MASTER BED" size="9′0″ × 9′6″" />
+      <Entry x={228} />
     </svg>
   );
 }
