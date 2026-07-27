@@ -3,6 +3,7 @@ import {
   getLeads,
   getOverview,
   getRecentSessions,
+  getRecordedSessionIds,
   getScrollBuckets,
   getSectionMarkers,
   getSectionReach,
@@ -36,6 +37,10 @@ export default async function AdminDashboard() {
     getSectionMarkers(),
   ]);
 
+  const recordedIds = [
+    ...(await getRecordedSessionIds(sessions.map((s) => s.id))),
+  ];
+
   return (
     <Dashboard
       overview={overview}
@@ -47,6 +52,7 @@ export default async function AdminDashboard() {
       scroll={scroll}
       clickPoints={clickPoints}
       sectionMarkers={sectionMarkers}
+      recordedIds={recordedIds}
     />
   );
 }

@@ -12,6 +12,7 @@ import type {
   SourceRow,
 } from "@/lib/analytics";
 import { ClickMap } from "@/components/admin/ClickMap";
+import { ReplayModal } from "@/components/admin/ReplayModal";
 
 type Tab = "overview" | "leads" | "behaviour" | "sessions" | "heatmap";
 
@@ -48,6 +49,7 @@ export function Dashboard({
   scroll,
   clickPoints,
   sectionMarkers,
+  recordedIds,
 }: {
   overview: Overview;
   sources: SourceRow[];
@@ -58,8 +60,11 @@ export function Dashboard({
   scroll: ScrollBucket[];
   clickPoints: ClickPoint[];
   sectionMarkers: SectionMarker[];
+  recordedIds: string[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
+  const [replaySid, setReplaySid] = useState<string | null>(null);
+  const recorded = new Set(recordedIds);
   const counts: Record<Tab, number | null> = {
     overview: null,
     leads: leads.length,
@@ -206,7 +211,7 @@ export function Dashboard({
       {tab === "sessions" && (
         <Card title={`Recent sessions (${sessions.length})`}>
           <SimpleTable
-            head={["Started", "Source", "Location", "Device", "IP", "Views", "Scroll", "CTAs", "Time", "Lead?"]}
+            head={["Started", "Source", "Location", "Device", "IP", "Views", "Scroll", "CTAs", "Time", "Lead?", "Replay"]}
             rows={sessions.map((s) => [
               when(s.startedAt),
               `${s.source}/${s.medium}`,
@@ -218,11 +223,26 @@ export function Dashboard({
               fmt(s.ctaClicks),
               mins(s.durationMs),
               s.converted ? "✓" : "",
+              recorded.has(s.id) ? (
+                <button
+                  type="button"
+                  onClick={() => setReplaySid(s.id)}
+                  className="inline-flex items-center gap-1.5 border border-accent/50 px-2.5 py-1 text-xs font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                >
+                  ▶ Watch
+                </button>
+              ) : (
+                <span className="text-white/25">—</span>
+              ),
             ])}
             empty="No sessions yet."
             scroll
           />
         </Card>
+      )}
+
+      {replaySid && (
+        <ReplayModal sessionId={replaySid} onClose={() => setReplaySid(null)} />
       )}
 
       {tab === "heatmap" && (
@@ -360,7 +380,7 @@ function SimpleTable({
   scroll = false,
 }: {
   head: string[];
-  rows: (string | number)[][];
+  rows: React.ReactNode[][];
   empty: string;
   align?: ("l" | "r")[];
   scroll?: boolean;

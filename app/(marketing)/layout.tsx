@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingActions } from "@/components/layout/FloatingActions";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { Tracker } from "@/components/analytics/Tracker";
+import { SessionRecorder } from "@/components/analytics/SessionRecorder";
 
 /**
  * Chrome for the public marketing site (landing + legal pages). The admin panel
@@ -17,6 +18,7 @@ export default function MarketingLayout({
   return (
     <>
       <Tracker />
+      <SessionRecorder />
       <SmoothScroll />
       <Header />
       <main className="flex-1">{children}</main>

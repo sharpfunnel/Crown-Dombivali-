@@ -97,9 +97,19 @@ export async function ensureAnalyticsSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS recordings (
+      id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      session_id UUID NOT NULL,
+      seq        INT NOT NULL,
+      events     JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
   await sql`CREATE INDEX IF NOT EXISTS events_session_idx ON events (session_id)`;
   await sql`CREATE INDEX IF NOT EXISTS events_type_idx ON events (type)`;
   await sql`CREATE INDEX IF NOT EXISTS sessions_visitor_idx ON sessions (visitor_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS recordings_session_idx ON recordings (session_id, seq)`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS session_id UUID`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id UUID`;
   ensured = true;
@@ -205,6 +215,49 @@ export async function attributeLead(
   await sql`UPDATE leads SET session_id = ${sessionId}, visitor_id = ${visitorId} WHERE id = ${leadId}`;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Session recordings (rrweb)                                                 */
+/* -------------------------------------------------------------------------- */
+
+const REC_MAX_BATCHES = 40; // ~5 min of capped recording; guards runaway rows.
+
+/** Append a batch of rrweb events for a session. */
+export async function saveRecordingBatch(
+  sessionId: string,
+  events: unknown[],
+): Promise<void> {
+  await ensureAnalyticsSchema();
+  const [{ count }] = await sql`
+    SELECT count(*)::int AS count FROM recordings WHERE session_id = ${sessionId}
+  `;
+  if (count >= REC_MAX_BATCHES) return; // cap reached — drop further batches
+  await sql`
+    INSERT INTO recordings (session_id, seq, events)
+    VALUES (${sessionId}, ${count}, ${JSON.stringify(events)})
+  `;
+}
+
+/** Which of the given sessions have a recording (for the "Watch" button). */
+export async function getRecordedSessionIds(
+  sessionIds: string[],
+): Promise<Set<string>> {
+  if (sessionIds.length === 0) return new Set();
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT DISTINCT session_id FROM recordings WHERE session_id = ANY(${sessionIds})
+  `;
+  return new Set(rows.map((r) => String(r.session_id)));
+}
+
+/** Reassemble a session's full rrweb event stream, in order. */
+export async function getRecording(sessionId: string): Promise<unknown[]> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT events FROM recordings WHERE session_id = ${sessionId} ORDER BY seq ASC
+  `;
+  return rows.flatMap((r) => r.events as unknown[]);
+}
+
 /**
  * Retention cleanup — raw events are the high-volume table, so purge them after
  * `days`. Session/visitor rollups (scroll, cta counts, duration) are already
@@ -218,6 +271,10 @@ export async function purgeOldData(days = 90): Promise<{
   await ensureAnalyticsSchema();
   const ev = await sql`
     DELETE FROM events WHERE created_at < now() - (${days} || ' days')::interval
+  `;
+  // Recordings are heavy; keep them a shorter 30 days.
+  await sql`
+    DELETE FROM recordings WHERE created_at < now() - '30 days'::interval
   `;
   const ss = await sql`
     DELETE FROM sessions
