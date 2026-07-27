@@ -6,9 +6,10 @@ import "rrweb-player/dist/style.css";
 type State = "loading" | "ready" | "empty" | "error";
 
 /**
- * Session replay modal. Fetches the session's rrweb events from the admin API
- * and plays them with rrweb-player. Everything loads lazily so the player and
- * its styles are never in the main bundle.
+ * Session replay modal. Fetches the session's rrweb events and plays them with
+ * rrweb-player. The player mounts into its OWN container (`holder`) that React
+ * never renders children into — status messages live in a separate overlay — so
+ * React and rrweb-player never fight over the same DOM nodes.
  */
 export function ReplayModal({
   sessionId,
@@ -21,8 +22,8 @@ export function ReplayModal({
   const [state, setState] = useState<State>("loading");
 
   useEffect(() => {
+    let destroyed = false;
     let player: { $destroy?: () => void } | null = null;
-    let cancelled = false;
 
     (async () => {
       try {
@@ -31,25 +32,23 @@ export function ReplayModal({
         );
         if (!res.ok) throw new Error(String(res.status));
         const { events } = await res.json();
-        if (cancelled) return;
+        if (destroyed) return;
 
-        // rrweb needs at least a full snapshot + one event to replay.
         if (!Array.isArray(events) || events.length < 2) {
           setState("empty");
           return;
         }
 
         const { default: RrwebPlayer } = await import("rrweb-player");
-        if (cancelled || !holder.current) return;
-        holder.current.innerHTML = "";
+        if (destroyed || !holder.current) return;
 
-        const width = Math.min(holder.current.clientWidth || 960, 1200);
+        const width = Math.min(holder.current.clientWidth || 940, 1180);
         const instance = new RrwebPlayer({
           target: holder.current,
           props: {
             events,
             width,
-            height: Math.round(width * 0.6),
+            height: Math.round(width * 0.58),
             autoPlay: true,
             showController: true,
           },
@@ -58,7 +57,7 @@ export function ReplayModal({
         setState("ready");
       } catch (err) {
         console.error("[replay] failed:", err);
-        if (!cancelled) setState("error");
+        if (!destroyed) setState("error");
       }
     })();
 
@@ -67,8 +66,12 @@ export function ReplayModal({
     document.body.style.overflow = "hidden";
 
     return () => {
-      cancelled = true;
-      player?.$destroy?.();
+      destroyed = true;
+      try {
+        player?.$destroy?.();
+      } catch {
+        /* player may already be gone */
+      }
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
@@ -100,24 +103,28 @@ export function ReplayModal({
           </button>
         </div>
 
-        <div
-          ref={holder}
-          className="flex min-h-[300px] items-center justify-center overflow-hidden bg-black/20"
-        >
-          {state === "loading" && (
-            <p className="text-sm text-white/50">Loading replay…</p>
+        <div className="relative min-h-[320px] bg-black/20">
+          {/* Status overlay — separate from the player's DOM. */}
+          {state !== "ready" && (
+            <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+              {state === "loading" && (
+                <p className="text-sm text-white/50">Loading replay…</p>
+              )}
+              {state === "empty" && (
+                <p className="text-sm text-white/50">
+                  This session is too short to replay — the visitor left before
+                  enough was captured.
+                </p>
+              )}
+              {state === "error" && (
+                <p className="text-sm text-red-300">
+                  Couldn&apos;t load this replay.
+                </p>
+              )}
+            </div>
           )}
-          {state === "empty" && (
-            <p className="px-6 py-16 text-center text-sm text-white/50">
-              This session is too short to replay (the visitor left before enough
-              was captured).
-            </p>
-          )}
-          {state === "error" && (
-            <p className="px-6 py-16 text-center text-sm text-red-300">
-              Couldn&apos;t load this replay.
-            </p>
-          )}
+          {/* rrweb-player mounts here; React never adds children to this node. */}
+          <div ref={holder} className="overflow-hidden" />
         </div>
       </div>
     </div>
