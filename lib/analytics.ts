@@ -33,9 +33,15 @@ export type RequestContext = {
   screenH?: number | null;
 };
 
-let ensured = false;
-export async function ensureAnalyticsSchema() {
-  if (ensured) return;
+// Memoise as a single shared promise so concurrent callers (the dashboard runs
+// ~10 queries at once) don't each re-run all the DDL on a cold start.
+let schemaReady: Promise<void> | null = null;
+export function ensureAnalyticsSchema(): Promise<void> {
+  if (!schemaReady) schemaReady = buildSchema();
+  return schemaReady;
+}
+
+async function buildSchema() {
   await sql`
     CREATE TABLE IF NOT EXISTS visitors (
       id             UUID PRIMARY KEY,
@@ -112,7 +118,6 @@ export async function ensureAnalyticsSchema() {
   await sql`CREATE INDEX IF NOT EXISTS recordings_session_idx ON recordings (session_id, seq)`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS session_id UUID`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id UUID`;
-  ensured = true;
 }
 
 /** Create the visitor on first sight; only set first-touch attribution once. */
@@ -219,7 +224,9 @@ export async function attributeLead(
 /*  Session recordings (rrweb)                                                 */
 /* -------------------------------------------------------------------------- */
 
-const REC_MAX_BATCHES = 40; // ~5 min of capped recording; guards runaway rows.
+// Silent safety bound (~20 min at a 12s flush) so no single session grows
+// without limit. Not a user-facing cap — normal visits never reach it.
+const REC_MAX_BATCHES = 100;
 
 /** Append a batch of rrweb events for a session. */
 export async function saveRecordingBatch(
@@ -237,17 +244,13 @@ export async function saveRecordingBatch(
   `;
 }
 
-/** Which of the given sessions have a recording (for the "Watch" button). */
-export async function getRecordedSessionIds(
-  sessionIds: string[],
-): Promise<Set<string>> {
-  if (sessionIds.length === 0) return new Set();
+/** Session IDs that have a recording (for the "Watch" button). */
+export async function getRecordedSessionIds(): Promise<string[]> {
   await ensureAnalyticsSchema();
   const rows = await sql`
-    SELECT DISTINCT session_id FROM recordings
-    WHERE session_id::text = ANY(${sessionIds})
+    SELECT DISTINCT session_id FROM recordings ORDER BY session_id LIMIT 5000
   `;
-  return new Set(rows.map((r) => String(r.session_id)));
+  return rows.map((r) => String(r.session_id));
 }
 
 /** Reassemble a session's full rrweb event stream, in order. */

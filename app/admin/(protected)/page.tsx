@@ -15,6 +15,7 @@ import { Dashboard } from "@/components/admin/Dashboard";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  // All queries run in parallel — the slowest one, not the sum, sets the time.
   const [
     overview,
     sources,
@@ -25,6 +26,7 @@ export default async function AdminDashboard() {
     scroll,
     clickPoints,
     sectionMarkers,
+    recordedIds,
   ] = await Promise.all([
     getOverview(),
     getTrafficSources(),
@@ -33,13 +35,10 @@ export default async function AdminDashboard() {
     getTopCtas(),
     getSectionReach(),
     getScrollBuckets(),
-    getClickPoints(4000),
+    getClickPoints(2500),
     getSectionMarkers(),
+    getRecordedSessionIds(),
   ]);
-
-  const recordedIds = [
-    ...(await getRecordedSessionIds(sessions.map((s) => s.id))),
-  ];
 
   return (
     <Dashboard

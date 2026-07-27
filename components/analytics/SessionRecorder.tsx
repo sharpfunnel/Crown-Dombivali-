@@ -3,34 +3,36 @@
 import { useEffect } from "react";
 
 /**
- * Session replay recorder (rrweb). Records the visit — capped at 5 minutes —
- * with all form inputs masked for privacy, batches the events and ships them to
- * /api/rec, which stores them against the session cookie set by the Tracker.
- * rrweb is imported lazily so it never blocks the initial page load, and the
- * recorder honours the same skip rules as the Tracker.
+ * Session replay recorder (rrweb) — tuned to stay out of the way.
+ *
+ * Recording is the heaviest thing analytics does (rrweb serialises the whole
+ * DOM when it starts), so we defer it until the page has fully loaded AND the
+ * browser is idle. That keeps the landing page's first paint, animations and
+ * scrolling completely smooth — the recording just picks up a moment later.
+ *
+ * No time cap; the whole visit is captured (a generous server-side safety
+ * bound stops any single session from growing without limit). All inputs are
+ * masked for privacy. Skips admin, embedded previews and automated browsers.
  */
 export function SessionRecorder() {
   useEffect(() => {
     if (window.location.pathname.startsWith("/admin")) return;
-    if (window.self !== window.top) return; // embedded admin preview
-    if (navigator.webdriver) return; // automated browsers
+    if (window.self !== window.top) return;
+    if (navigator.webdriver) return;
     if (new URLSearchParams(window.location.search).get("preview")) return;
 
-    const CAP_MS = 5 * 60 * 1000; // 5 minutes
     let buffer: unknown[] = [];
     let stopFn: (() => void) | undefined;
-    let capTimer = 0;
     let flushTimer = 0;
+    let started = false;
     let cancelled = false;
-    let firstFlushDone = false;
+    let cookieReady = false;
 
     const flush = (beacon = false) => {
-      // Give the Tracker a moment to set the session cookie before the first send.
-      if (!firstFlushDone && !beacon) return;
+      if (!cookieReady && !beacon) return; // let the Tracker set cds_sid first
       if (buffer.length === 0) return;
-      const batch = buffer;
+      const payload = JSON.stringify({ events: buffer });
       buffer = [];
-      const payload = JSON.stringify({ events: batch });
       if (beacon && navigator.sendBeacon) {
         navigator.sendBeacon(
           "/api/rec",
@@ -46,42 +48,53 @@ export function SessionRecorder() {
       }
     };
 
-    (async () => {
+    const startRecording = async () => {
+      if (started || cancelled) return;
+      started = true;
       try {
         const rrweb = await import("rrweb");
         if (cancelled) return;
-
         stopFn = rrweb.record({
-          emit(event) {
-            buffer.push(event);
-          },
-          maskAllInputs: true, // never capture typed PII
+          emit: (event) => buffer.push(event),
+          maskAllInputs: true,
           recordCanvas: false,
           collectFonts: false,
-          sampling: { mousemove: 50, scroll: 150, media: 800 },
+          // Sample high-frequency signals so the payload stays light.
+          sampling: { mousemove: 60, scroll: 200, media: 800, input: "last" },
         });
-
-        // Allow the session cookie to be set, then start periodic flushing.
+        // The session cookie is set by the Tracker's first ping; give it a beat.
         window.setTimeout(() => {
-          firstFlushDone = true;
+          cookieReady = true;
           flush();
-        }, 4000);
-        flushTimer = window.setInterval(() => flush(), 10000);
-        capTimer = window.setTimeout(() => stopFn?.(), CAP_MS);
+        }, 3000);
+        flushTimer = window.setInterval(() => flush(), 12000);
       } catch (err) {
-        console.error("[rec] recorder init failed:", err);
+        console.error("[rec] init failed:", err);
       }
-    })();
+    };
+
+    // Defer until the page is loaded and the main thread is idle.
+    const kickoff = () => {
+      const idle = (
+        window as unknown as {
+          requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void;
+        }
+      ).requestIdleCallback;
+      if (idle) idle(() => startRecording(), { timeout: 4000 });
+      else window.setTimeout(startRecording, 1500);
+    };
+    if (document.readyState === "complete") kickoff();
+    else window.addEventListener("load", kickoff, { once: true });
 
     const onHide = () => {
       if (document.visibilityState === "hidden") {
-        firstFlushDone = true;
+        cookieReady = true;
         flush(true);
       }
     };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("pagehide", () => {
-      firstFlushDone = true;
+      cookieReady = true;
       flush(true);
     });
 
@@ -89,7 +102,7 @@ export function SessionRecorder() {
       cancelled = true;
       stopFn?.();
       window.clearInterval(flushTimer);
-      window.clearTimeout(capTimer);
+      window.removeEventListener("load", kickoff);
       document.removeEventListener("visibilitychange", onHide);
       flush(true);
     };
