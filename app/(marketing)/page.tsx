@@ -5,6 +5,7 @@ import { FloorPlans } from "@/components/sections/FloorPlans";
 import { Amenities, Clubhouse, Temple } from "@/components/sections/Amenities";
 import { Location } from "@/components/sections/Location";
 import { Specifications } from "@/components/sections/Specifications";
+import { NriInvestors } from "@/components/sections/NriInvestors";
 import { Gallery } from "@/components/sections/Gallery";
 import { SiteVisitBanner } from "@/components/sections/SiteVisitBanner";
 import { Faq } from "@/components/sections/Faq";
@@ -30,6 +31,7 @@ export default function Home() {
       <Temple />
       <Specifications />
       <Location />
+      <NriInvestors />
       <Gallery />
       <SiteVisitBanner />
       <Faq />

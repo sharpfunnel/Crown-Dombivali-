@@ -326,6 +326,69 @@ export const neighbourhood = [
   { label: "Hospitals", items: ["Upcoming Jupiter Hospital", "AIMS Medical Centre"] },
 ];
 
+/* -------------------------------------------------------------------------- */
+/*  NRI investors                                                              */
+/* -------------------------------------------------------------------------- */
+
+export type NriBenefit = { title: string; body: string; icon: NriIcon };
+
+export const nri = {
+  heading: "Investing from abroad? We handle every step.",
+  intro:
+    "Hundreds of NRI families across the Gulf and USA have booked homes with us without flying down. From live video tours to documentation and repatriation guidance, your dedicated relationship manager takes care of it all — in your timezone.",
+  regions: [
+    "Dubai",
+    "Abu Dhabi",
+    "Sharjah",
+    "Doha",
+    "Riyadh",
+    "Jeddah",
+    "Kuwait City",
+    "Muscat",
+    "USA",
+  ],
+  benefits: [
+    {
+      title: "Live virtual site tours",
+      body: "Walk the project, show flat and clubhouse over a live video call on WhatsApp or Zoom, scheduled to your local time.",
+      icon: "video",
+    },
+    {
+      title: "End-to-end documentation",
+      body: "PAN, Aadhaar, Power of Attorney and NRE/NRO payment guidance — handled remotely, with e-signing wherever possible.",
+      icon: "document",
+    },
+    {
+      title: "NRI home-loan assistance",
+      body: "Introductions to banks offering NRI home loans, with help preparing the paperwork lenders ask for.",
+      icon: "bank",
+    },
+    {
+      title: "RERA-registered & transparent",
+      body: "A MahaRERA-registered project with a written price sheet you can verify from abroad — no surprises.",
+      icon: "shield",
+    },
+    {
+      title: "Repatriation-friendly",
+      body: "Clear guidance on rental income and resale proceeds under RBI rules, so your investment stays liquid.",
+      icon: "exchange",
+    },
+    {
+      title: "Dedicated NRI manager",
+      body: "One point of contact across time zones — reachable on WhatsApp, email and call from booking to possession.",
+      icon: "headset",
+    },
+  ] as NriBenefit[],
+} as const;
+
+export type NriIcon =
+  | "video"
+  | "document"
+  | "bank"
+  | "shield"
+  | "exchange"
+  | "headset";
+
 export const whyChoose = [
   "Excellent Metro Connectivity",
   "Fast-Developing Location",
