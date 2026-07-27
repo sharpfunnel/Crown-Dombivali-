@@ -21,8 +21,6 @@ export function Tracker() {
     // navigator.webdriver). This is what filters the datacenter "San Jose" bots.
     if (navigator.webdriver) return;
 
-    const start = Date.now();
-
     /* ---- context (sent with every batch) -------------------------------- */
     const params = new URLSearchParams(window.location.search);
     const utm: Record<string, string> = {};
@@ -183,26 +181,36 @@ export function Tracker() {
     };
     document.addEventListener("click", onClick, true);
 
-    /* ---- periodic + on-hide flush -------------------------------------- */
-    // Heartbeat: record elapsed time each tick so duration is accurate even
-    // when a visitor leaves without a clean pagehide (server keeps the max).
+    /* ---- active time on page ------------------------------------------- */
+    // Count only ACTIVE (foreground) time, so a tab left open in the background
+    // doesn't inflate the duration. Capped so nothing runs away.
+    const CAP_MS = 60 * 60 * 1000; // 60 minutes
+    let activeTotal = 0;
+    let resumedAt = Date.now();
+    const activeMs = () => {
+      const live =
+        document.visibilityState === "visible" ? Date.now() - resumedAt : 0;
+      return Math.min(activeTotal + live, CAP_MS);
+    };
+
     const interval = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      push({ type: "time", value: Date.now() - start });
+      push({ type: "time", value: activeMs() });
       flush();
     }, 15000);
-    let ended = false;
+
     const end = () => {
-      if (ended) return;
-      ended = true;
-      push({ type: "time", value: Date.now() - start });
+      push({ type: "time", value: activeMs() });
       flush(true);
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
-        push({ type: "time", value: Date.now() - start });
+        // Freeze the active counter and flush the accumulated time.
+        activeTotal += Date.now() - resumedAt;
+        push({ type: "time", value: Math.min(activeTotal, CAP_MS) });
         flush(true);
-        ended = false; // allow a later final flush too
+      } else {
+        resumedAt = Date.now();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);

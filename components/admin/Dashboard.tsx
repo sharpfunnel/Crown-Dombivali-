@@ -419,7 +419,13 @@ function pct(n: number) {
 }
 function mins(ms: number) {
   const s = Math.round(ms / 1000);
-  return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ${m % 60}m`;
+  const d = Math.floor(h / 24);
+  return `${d}d ${h % 24}h`;
 }
 function when(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
