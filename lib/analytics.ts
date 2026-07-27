@@ -244,7 +244,8 @@ export async function getRecordedSessionIds(
   if (sessionIds.length === 0) return new Set();
   await ensureAnalyticsSchema();
   const rows = await sql`
-    SELECT DISTINCT session_id FROM recordings WHERE session_id = ANY(${sessionIds})
+    SELECT DISTINCT session_id FROM recordings
+    WHERE session_id::text = ANY(${sessionIds})
   `;
   return new Set(rows.map((r) => String(r.session_id)));
 }
