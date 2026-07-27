@@ -95,11 +95,19 @@ export async function POST(request: Request) {
     screenH: num(body.context?.screenH),
   };
 
-  // Campaign is India-targeted; foreign traffic has been exclusively datacenter
-  // bots (e.g. AWS "San Jose"). Skip recording it. To allow other countries,
-  // change TARGET_COUNTRY or remove this block. Null geo (local dev) is allowed.
-  const TARGET_COUNTRY = "IN";
-  if (ctx.country && ctx.country !== TARGET_COUNTRY) {
+  // Only record traffic from the campaign's target markets — India plus the NRI
+  // regions (Gulf + USA). Everything else (random global bots) is dropped. Null
+  // geo (local dev) is allowed. Edit this set to change targeting.
+  const ALLOWED_COUNTRIES = new Set([
+    "IN", // India
+    "AE", // UAE — Dubai, Abu Dhabi, Sharjah
+    "QA", // Qatar — Doha
+    "SA", // Saudi Arabia — Riyadh, Jeddah
+    "KW", // Kuwait — Kuwait City
+    "OM", // Oman — Muscat
+    "US", // USA — California, Seattle, New York, New Jersey (NRI)
+  ]);
+  if (ctx.country && !ALLOWED_COUNTRIES.has(ctx.country)) {
     return new NextResponse(null, { status: 204 });
   }
 
