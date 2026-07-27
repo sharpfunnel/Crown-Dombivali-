@@ -248,28 +248,22 @@ function PlanTwoBhk() {
       aria-label="2 BHK typical unit plan, 487 square feet carpet area"
     >
       <rect x="20" y="20" width="380" height="280" {...wall} />
-      {/* common toilet — top left */}
-      <path d="M20 20h85v85H20" {...inner} />
-      <PlanLabel x={62} y={58} name="COMMON WC" size="4′5″ × 7′0″" />
-      {/* kitchen — top centre */}
-      <path d="M105 20v85h130" {...inner} />
-      <PlanLabel x={170} y={58} name="KITCHEN" size="6′3″ × 7′2″" />
-      {/* master toilet — top right */}
-      <path d="M300 20v85h100" {...inner} />
-      <PlanLabel x={350} y={58} name="MASTER WC" size="4′4″ × 7′0″" />
-      {/* utility — left */}
-      <path d="M20 105h85v55" {...inner} />
-      <PlanLabel x={62} y={137} name="UTILITY" size="5′0″ × 3′0″" />
-      {/* bedroom 02 — bottom left */}
-      <path d="M20 160h150v140" {...inner} />
-      <PlanLabel x={95} y={228} name="BEDROOM 02" size="9′0″ × 9′6″" />
-      {/* living room — centre */}
-      <path d="M170 105v195h115" {...inner} />
-      <PlanLabel x={228} y={205} name="LIVING ROOM" size="10′0″ × 12′10″" />
-      {/* master bedroom — right */}
-      <path d="M285 105v195" {...inner} />
-      <PlanLabel x={343} y={205} name="MASTER BED" size="9′0″ × 9′6″" />
-      <Entry x={228} />
+      {/* full-height column dividers */}
+      <path d="M160 20v280" {...inner} />
+      <path d="M290 20v280" {...inner} />
+      {/* wet rooms / kitchen band on top, living rooms below */}
+      <path d="M20 100h380" {...inner} />
+      {/* common WC | utility split (top-left only) */}
+      <path d="M100 20v80" {...inner} />
+
+      <PlanLabel x={60} y={56} name="COMMON WC" size="4′5″ × 7′0″" />
+      <PlanLabel x={130} y={56} name="UTILITY" size="5′0″ × 3′0″" />
+      <PlanLabel x={225} y={56} name="KITCHEN" size="6′3″ × 7′2″" />
+      <PlanLabel x={345} y={56} name="MASTER WC" size="4′4″ × 7′0″" />
+      <PlanLabel x={90} y={196} name="BEDROOM 02" size="9′0″ × 9′6″" />
+      <PlanLabel x={225} y={196} name="LIVING ROOM" size="10′0″ × 12′10″" />
+      <PlanLabel x={345} y={196} name="MASTER BED" size="9′0″ × 9′6″" />
+      <Entry x={225} />
     </svg>
   );
 }
