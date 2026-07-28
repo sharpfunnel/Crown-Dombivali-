@@ -27,11 +27,14 @@ export function SessionRecorder() {
     let started = false;
     let cancelled = false;
     let cookieReady = false;
+    // Batch order is assigned here so the server can reassemble correctly even
+    // if requests arrive out of order. seq 0 always carries the full snapshot.
+    let seq = 0;
 
     const flush = (beacon = false) => {
       if (!cookieReady && !beacon) return; // let the Tracker set cds_sid first
       if (buffer.length === 0) return;
-      const payload = JSON.stringify({ events: buffer });
+      const payload = JSON.stringify({ seq: seq++, events: buffer });
       buffer = [];
       if (beacon && navigator.sendBeacon) {
         navigator.sendBeacon(

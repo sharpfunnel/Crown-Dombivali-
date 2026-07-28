@@ -13,9 +13,11 @@ export async function POST(request: Request) {
   if (!sid) return new NextResponse(null, { status: 204 });
 
   let events: unknown[];
+  let seq = 0;
   try {
     const body = await request.json();
     events = Array.isArray(body.events) ? body.events : [];
+    seq = Number.isInteger(body.seq) && body.seq >= 0 ? body.seq : 0;
   } catch {
     return new NextResponse(null, { status: 204 });
   }
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await saveRecordingBatch(sid, events);
+    await saveRecordingBatch(sid, seq, events);
   } catch (err) {
     console.error("[rec] save failed:", err);
   }

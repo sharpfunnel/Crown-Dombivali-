@@ -228,19 +228,21 @@ export async function attributeLead(
 // without limit. Not a user-facing cap — normal visits never reach it.
 const REC_MAX_BATCHES = 100;
 
-/** Append a batch of rrweb events for a session. */
+/**
+ * Append a batch of rrweb events. `seq` is assigned by the CLIENT (which knows
+ * the true recording order) so batches always reassemble correctly even if the
+ * requests arrive out of order.
+ */
 export async function saveRecordingBatch(
   sessionId: string,
+  seq: number,
   events: unknown[],
 ): Promise<void> {
   await ensureAnalyticsSchema();
-  const [{ count }] = await sql`
-    SELECT count(*)::int AS count FROM recordings WHERE session_id = ${sessionId}
-  `;
-  if (count >= REC_MAX_BATCHES) return; // cap reached — drop further batches
+  if (seq >= REC_MAX_BATCHES) return; // silent safety bound
   await sql`
     INSERT INTO recordings (session_id, seq, events)
-    VALUES (${sessionId}, ${count}, ${JSON.stringify(events)})
+    VALUES (${sessionId}, ${seq}, ${JSON.stringify(events)})
   `;
 }
 
