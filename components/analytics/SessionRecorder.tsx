@@ -92,7 +92,12 @@ export function SessionRecorder() {
             },
             maskAllInputs: true, // never capture typed PII
             recordCanvas: false,
-            collectFonts: false,
+            // Embed @font-face fonts in the snapshot. Geist is self-hosted under
+            // /_next, whose URLs don't resolve inside the replay iframe — without
+            // this the replay falls back to a wider system font and headings
+            // reflow and clip. Collected once in the FullSnapshot; gzip handles it.
+            collectFonts: true,
+            inlineStylesheet: true,
             sampling: {
               scroll: 200,
               mousemoveCallback: 400,
