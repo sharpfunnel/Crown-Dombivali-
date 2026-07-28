@@ -51,13 +51,7 @@ export const metadata: Metadata = {
     images: ["/images/crown-township-render.jpg"],
   },
   twitter: { card: "summary_large_image" },
-  // Keep this project entirely out of search engines.
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: { index: false, follow: false },
-  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
