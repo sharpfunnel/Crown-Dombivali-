@@ -27,7 +27,7 @@ export function FloatingActions() {
           href={project.whatsappHref}
           target="_blank"
           rel="noreferrer"
-          aria-label="Chat on WhatsApp"
+          aria-label={project.whatsappCta}
           className="group flex h-13 w-13 items-center justify-center bg-[#25D366] text-white shadow-lg transition-transform duration-300 hover:scale-105"
         >
           <WhatsAppIcon className="h-6 w-6" />

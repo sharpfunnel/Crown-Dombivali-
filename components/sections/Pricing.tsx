@@ -2,7 +2,12 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
-import { bookingDetails, configurations, pricingNote } from "@/lib/project";
+import {
+  bookingDetails,
+  configurations,
+  pricingNote,
+  propertyTypes,
+} from "@/lib/project";
 
 const bookingIcons: Record<string, React.ReactNode> = {
   token: <path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H9a2.5 2.5 0 0 0 0 5h7" />,
@@ -98,6 +103,38 @@ export function Pricing() {
             </Reveal>
           ))}
         </div>
+
+        {/* --- Full range of homes ----------------------------------------- */}
+        <Reveal delay={0.1} className="mt-12">
+          <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">
+            The full range at Crown Dombivli
+          </p>
+          <div className="mt-4 grid gap-px border border-ink/12 bg-ink/12 sm:grid-cols-2 lg:grid-cols-3">
+            {propertyTypes.map((p) => (
+              <div
+                key={p.type}
+                className="flex items-center justify-between gap-4 bg-white px-5 py-4"
+              >
+                <span>
+                  <span className="block font-bold text-ink">{p.type}</span>
+                  <span className="mt-0.5 block text-xs text-ink/50">
+                    {p.summary}
+                  </span>
+                </span>
+                <span className="text-right">
+                  <span className="block font-semibold whitespace-nowrap text-accent">
+                    {p.price}
+                  </span>
+                  {p.priceNote && (
+                    <span className="text-[0.7rem] text-ink/45">
+                      {p.priceNote}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Reveal>
 
         <Reveal delay={0.15}>
           <p className="mt-6 flex items-center gap-2.5 text-sm font-medium text-ink/60">

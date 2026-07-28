@@ -66,7 +66,7 @@ export function SiteVisitBanner() {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2.5 bg-[#25D366] px-8 py-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1eb857]"
               >
-                <WhatsAppIcon /> WhatsApp
+                <WhatsAppIcon /> {project.whatsappCta}
               </a>
               <a
                 href="#lead-form"

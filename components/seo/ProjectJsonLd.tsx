@@ -12,7 +12,7 @@ export function ProjectJsonLd() {
         "@type": "Residence",
         name: project.fullName,
         description:
-          "A 17-acre residential township in Manpada, Dombivli East offering premium 1 & 2 BHK homes with metro connectivity, clubhouse, temple and modern amenities.",
+          "A 17-acre residential township in Manpada, Dombivli, Mumbai offering premium 1, 2, 3 & 4 BHK homes, villas, bungalows and duplexes from ₹39.99 Lakhs, with metro connectivity, clubhouse, temple and modern amenities — ideal for NRIs and Mumbai homebuyers.",
         address: {
           "@type": "PostalAddress",
           streetAddress: "Manpada Road",

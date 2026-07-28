@@ -96,7 +96,7 @@ export function NriInvestors() {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2.5 bg-[#25D366] px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1eb857]"
               >
-                <WhatsAppIcon /> Chat on WhatsApp
+                <WhatsAppIcon /> {project.whatsappCta}
               </a>
             </Reveal>
           </div>

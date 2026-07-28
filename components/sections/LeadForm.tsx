@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { configurations, project } from "@/lib/project";
+import { project, propertyPreferences } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
 import { SuccessTick } from "@/components/ui/SuccessTick";
 import { FieldError } from "@/components/ui/FieldError";
@@ -103,7 +103,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
               htmlFor="lead-config"
               className="mb-1.5 block text-xs tracking-[0.12em] text-white/45 uppercase"
             >
-              Configuration Interested
+              Property Preference
               <span className="ml-1 text-accent">*</span>
             </label>
             <select
@@ -119,16 +119,13 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
               }`}
             >
               <option value="" disabled className="bg-ink">
-                Select configuration
+                Select property preference
               </option>
-              {configurations.map((c) => (
-                <option key={c.id} value={c.type} className="bg-ink">
-                  {c.type} — {c.carpetArea}
+              {propertyPreferences.map((p) => (
+                <option key={p} value={p} className="bg-ink">
+                  {p}
                 </option>
               ))}
-              <option value="Both" className="bg-ink">
-                Both 1 & 2 BHK
-              </option>
             </select>
             <FieldError message={errors.configuration} />
           </div>

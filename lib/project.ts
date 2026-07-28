@@ -28,11 +28,14 @@ export const project = {
     "&t=&z=17&ie=UTF8&iwloc=B&output=embed",
   phone: "+91 80972 66930",
   phoneHref: "+918097266930",
+  whatsappNumber: "+91 84510 47710",
   whatsappHref:
-    "https://wa.me/918097266930?text=" +
+    "https://wa.me/918451047710?text=" +
     encodeURIComponent(
-      "Hi, I'm interested in Crown Dombivli Manpada. Please share the price sheet and brochure.",
+      "Hi, I'm interested in Crown Dombivli. Please share the price sheet and brochure.",
     ),
+  /** Label used on WhatsApp CTAs across the site. */
+  whatsappCta: "Chat on WhatsApp: +91 84510 47710",
   email: "sales@crowndombivli.com",
   brochureHref: "/crown-dombivli-brochure.pdf",
 } as const;
@@ -42,13 +45,14 @@ export const project = {
 /* -------------------------------------------------------------------------- */
 
 export const hero = {
-  heading: "Your Dream Home Awaits at Crown Dombivli, Manpada.",
-  subheading: "Premium 1 & 2 BHK Homes Starting at ₹39.99 Lakhs*",
+  heading: "Your Dream Home Awaits at Crown Dombivli, Mumbai.",
+  subheading:
+    "Premium 1, 2, 3 & 4 BHK Homes, Villas, Bungalows & Duplexes — Starting at ₹39.99 Lakhs*",
   badges: [
     "17 Acre Township",
     "Metro at Your Doorstep",
     "Starting ₹39.99 Lakhs*",
-    "Negotiable Pricing",
+    "For NRIs & Mumbai Homebuyers",
     "Possession Starting This Year-End",
     "World-Class Amenities",
   ],
@@ -60,14 +64,14 @@ export const hero = {
 
 export const about = {
   heading: "Experience Comfortable Modern Living",
-  body: "Crown Dombivli Manpada is a thoughtfully planned residential township spread across 17 acres, offering premium 1 & 2 BHK homes designed for modern families. The project combines excellent connectivity, quality construction, green open spaces, premium amenities, and everyday convenience in one destination.",
+  body: "Crown Dombivli is a thoughtfully planned residential township spread across 17 acres in the heart of the Mumbai metropolitan region, offering premium 1, 2, 3 & 4 BHK homes along with villas, bungalows and duplex residences. Designed for modern Mumbai families and NRI investors alike, Crown combines excellent connectivity, quality construction, green open spaces, world-class amenities and everyday convenience in one destination.",
 } as const;
 
 export type Highlight = { title: string; icon: IconName };
 
 export const projectHighlights: Highlight[] = [
   { title: "17-Acre Residential Township", icon: "township" },
-  { title: "Premium 1 & 2 BHK Homes", icon: "home" },
+  { title: "1, 2, 3 & 4 BHK, Villas & Duplexes", icon: "home" },
   { title: "Metro Connectivity", icon: "metro" },
   { title: "Clubhouse", icon: "clubhouse" },
   { title: "Temple", icon: "temple" },
@@ -134,7 +138,37 @@ export const configurations: Configuration[] = [
   },
 ];
 
-export const pricingNote = "Prices are negotiable.";
+/**
+ * The full range of homes at Crown Dombivli. 1 & 2 BHK carry confirmed starting
+ * prices; the larger and premium formats are priced on request.
+ *
+ * TODO(client): add confirmed starting prices for 3/4 BHK, villas, bungalows
+ * and duplexes when available, replacing "Price on request".
+ */
+export type PropertyType = {
+  type: string;
+  summary: string;
+  price: string;
+  priceNote: string;
+};
+
+export const propertyTypes: PropertyType[] = [
+  { type: "1 BHK", summary: "Compact, efficient homes", price: "₹39.99 Lakhs", priceNote: "onwards*" },
+  { type: "2 BHK", summary: "Spacious family homes", price: "₹59.99 Lakhs", priceNote: "onwards*" },
+  { type: "3 BHK", summary: "Premium larger residences", price: "Price on request", priceNote: "" },
+  { type: "4 BHK", summary: "Expansive luxury homes", price: "Price on request", priceNote: "" },
+  { type: "Villas", summary: "Independent villa living", price: "Price on request", priceNote: "" },
+  { type: "Bungalows", summary: "Private bungalow homes", price: "Price on request", priceNote: "" },
+  { type: "Duplex Homes", summary: "Double-height duplex living", price: "Price on request", priceNote: "" },
+];
+
+/** Options for the "Property Preference" dropdown in the enquiry forms. */
+export const propertyPreferences = ["1 BHK", "2 BHK", "3 BHK", "4 BHK"];
+
+export const startingPrice = "₹39.99 Lakhs";
+
+export const pricingNote =
+  "All homes start at ₹39.99 Lakhs*. Prices are negotiable; taxes and other charges are extra.";
 
 export const bookingDetails = [
   {
@@ -495,12 +529,12 @@ export const faqs = [
   {
     question: "What configurations are available?",
     answer:
-      "Crown Dombivli Manpada offers premium 1 BHK and 2 BHK homes. The 1 BHK has a carpet area of 322 sq. ft. and the 2 BHK has a carpet area of 487 sq. ft. Request the price sheet for the full unit-wise breakdown.",
+      "Crown Dombivli offers premium 1, 2, 3 & 4 BHK apartments along with villas, bungalows and duplex homes. The 1 BHK has a carpet area of 322 sq. ft. and the 2 BHK is 487 sq. ft.; larger formats are available on request. Request the price sheet for the full unit-wise breakdown.",
   },
   {
     question: "What is the starting price?",
     answer:
-      "1 BHK homes start at ₹39.99 Lakhs + taxes and 2 BHK homes start at ₹59.99 Lakhs + taxes. Taxes, government charges, registration charges and other applicable costs are extra.",
+      "Homes at Crown Dombivli start at ₹39.99 Lakhs + taxes for a 1 BHK, and ₹59.99 Lakhs + taxes for a 2 BHK. Pricing for 3 & 4 BHK, villas, bungalows and duplexes is shared on request. Taxes, government charges, registration and other applicable costs are extra.",
   },
   {
     question: "Are prices negotiable?",

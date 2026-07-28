@@ -5,7 +5,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
-import { budgetOptions, configurations, project } from "@/lib/project";
+import { budgetOptions, project, propertyPreferences } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
 import { SuccessTick } from "@/components/ui/SuccessTick";
 import { FieldError } from "@/components/ui/FieldError";
@@ -75,7 +75,7 @@ function ContactDetails() {
           <span>
             <span className="block text-xs text-paper/40">WhatsApp</span>
             <span className="mt-0.5 block font-semibold text-paper transition-colors group-hover:text-[#25D366]">
-              Chat with our team
+              {project.whatsappNumber}
             </span>
           </span>
         </a>
@@ -183,20 +183,17 @@ function FullContactForm() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
-            label="Configuration"
+            label="Property Preference"
             name="configuration"
             required
             error={errors.configuration}
             onChange={() => clearError("configuration")}
           >
-            {configurations.map((c) => (
-              <option key={c.id} value={c.type} className="bg-ink-800">
-                {c.type}
+            {propertyPreferences.map((p) => (
+              <option key={p} value={p} className="bg-ink-800">
+                {p}
               </option>
             ))}
-            <option value="Both" className="bg-ink-800">
-              Both 1 & 2 BHK
-            </option>
           </Select>
           <Select label="Minimum Budget" name="budget">
             {budgetOptions.map((b) => (
