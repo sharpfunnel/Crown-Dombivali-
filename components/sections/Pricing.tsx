@@ -109,11 +109,11 @@ export function Pricing() {
           <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">
             The full range at Crown Dombivli
           </p>
-          <div className="mt-4 grid gap-px border border-ink/12 bg-ink/12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {propertyTypes.map((p) => (
               <div
                 key={p.type}
-                className="flex items-center justify-between gap-4 bg-white px-5 py-4"
+                className="flex items-center justify-between gap-4 border border-ink/12 bg-white px-5 py-4 transition-colors duration-300 hover:border-accent"
               >
                 <span>
                   <span className="block font-bold text-ink">{p.type}</span>
@@ -121,8 +121,8 @@ export function Pricing() {
                     {p.summary}
                   </span>
                 </span>
-                <span className="text-right">
-                  <span className="block font-semibold whitespace-nowrap text-accent">
+                <span className="shrink-0 text-right">
+                  <span className="block text-sm font-semibold whitespace-nowrap text-accent">
                     {p.price}
                   </span>
                   {p.priceNote && (
