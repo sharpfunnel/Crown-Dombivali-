@@ -107,7 +107,7 @@ export function Pricing() {
         {/* --- Full range of homes ----------------------------------------- */}
         <Reveal delay={0.1} className="mt-12">
           <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">
-            The full range at Crown Dombivli
+            The full range at Lodha Crown Dombivli
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {propertyTypes.map((p) => (

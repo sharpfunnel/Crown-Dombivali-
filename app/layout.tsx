@@ -19,15 +19,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://crowndombivli.com"),
   title: {
-    default: "Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
-    template: "%s · Crown Dombivli",
+    default: "Lodha Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
+    template: "%s · Lodha Crown Dombivli",
   },
   description:
-    "Book your dream home at Crown Dombivli, Mumbai. Premium 1, 2, 3 & 4 BHK apartments, villas, bungalows and duplexes from ₹39.99 Lakhs — for NRIs and Mumbai homebuyers, with metro connectivity, clubhouse and world-class amenities.",
+    "Book your dream home at Lodha Crown Dombivli, Mumbai. Premium 1, 2, 3 & 4 BHK apartments, villas, bungalows and duplexes from ₹39.99 Lakhs — for NRIs and Mumbai homebuyers, with metro connectivity, clubhouse and world-class amenities.",
   keywords: [
-    "Crown Dombivli",
-    "Crown Dombivli Mumbai",
-    "Crown Dombivli Manpada",
+    "Lodha Crown Dombivli",
+    "Lodha Crown Dombivli Mumbai",
+    "Lodha Crown Dombivli Manpada",
     "Crown Manpada",
     "1 BHK in Dombivli",
     "2 BHK Flats in Dombivli",
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: "Crown Dombivli",
-    title: "Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
+    siteName: "Lodha Crown Dombivli",
+    title: "Lodha Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
     description:
       "Premium 1, 2, 3 & 4 BHK homes, villas and duplexes from ₹39.99 Lakhs — for NRIs and Mumbai homebuyers, with metro connectivity and world-class amenities.",
     images: ["/images/crown-township-render.jpg"],

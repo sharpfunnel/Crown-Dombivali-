@@ -31,7 +31,7 @@ export function Hero() {
       >
         <Image
           src="/images/crown-township-render.jpg"
-          alt="Aerial render of the Crown Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
+          alt="Aerial render of the Lodha Crown Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
           fill
           priority
           sizes="100vw"
