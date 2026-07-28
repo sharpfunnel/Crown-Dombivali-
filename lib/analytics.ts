@@ -1,4 +1,5 @@
 import "server-only";
+import { gzipSync, gunzipSync } from "node:zlib";
 import { sql } from "@/lib/db";
 
 /**
@@ -105,13 +106,19 @@ async function buildSchema() {
   `;
   await sql`
     CREATE TABLE IF NOT EXISTS recordings (
-      id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      session_id UUID NOT NULL,
-      seq        INT NOT NULL,
-      events     JSONB NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      session_id  UUID NOT NULL,
+      seq         INT NOT NULL,
+      events      JSONB,
+      data        TEXT,
+      event_count INT,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  // Migrate older recordings tables to the gzip-chunk shape.
+  await sql`ALTER TABLE recordings ADD COLUMN IF NOT EXISTS data TEXT`;
+  await sql`ALTER TABLE recordings ADD COLUMN IF NOT EXISTS event_count INT`;
+  await sql`ALTER TABLE recordings ALTER COLUMN events DROP NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS events_session_idx ON events (session_id)`;
   await sql`CREATE INDEX IF NOT EXISTS events_type_idx ON events (type)`;
   await sql`CREATE INDEX IF NOT EXISTS sessions_visitor_idx ON sessions (visitor_id)`;
@@ -229,9 +236,10 @@ export async function attributeLead(
 const REC_MAX_BATCHES = 100;
 
 /**
- * Append a batch of rrweb events. `seq` is assigned by the CLIENT (which knows
- * the true recording order) so batches always reassemble correctly even if the
- * requests arrive out of order.
+ * Append a batch of rrweb events, gzip-compressed. `seq` is assigned by the
+ * CLIENT (which knows the true recording order) so batches always reassemble
+ * correctly even if the requests arrive out of order. The FullSnapshot is large
+ * JSON and compresses very well, so we store gzip(base64) rather than raw JSON.
  */
 export async function saveRecordingBatch(
   sessionId: string,
@@ -240,9 +248,10 @@ export async function saveRecordingBatch(
 ): Promise<void> {
   await ensureAnalyticsSchema();
   if (seq >= REC_MAX_BATCHES) return; // silent safety bound
+  const gz = gzipSync(Buffer.from(JSON.stringify(events))).toString("base64");
   await sql`
-    INSERT INTO recordings (session_id, seq, events)
-    VALUES (${sessionId}, ${seq}, ${JSON.stringify(events)})
+    INSERT INTO recordings (session_id, seq, data, event_count)
+    VALUES (${sessionId}, ${seq}, ${gz}, ${events.length})
   `;
 }
 
@@ -255,13 +264,26 @@ export async function getRecordedSessionIds(): Promise<string[]> {
   return rows.map((r) => String(r.session_id));
 }
 
-/** Reassemble a session's full rrweb event stream, in order. */
+/** Reassemble a session's full rrweb event stream, in order (gunzip + concat). */
 export async function getRecording(sessionId: string): Promise<unknown[]> {
   await ensureAnalyticsSchema();
   const rows = await sql`
-    SELECT events FROM recordings WHERE session_id = ${sessionId} ORDER BY seq ASC
+    SELECT data, events FROM recordings
+    WHERE session_id = ${sessionId} ORDER BY seq ASC
   `;
-  return rows.flatMap((r) => r.events as unknown[]);
+  const events: unknown[] = [];
+  for (const r of rows) {
+    if (r.data) {
+      const json = gunzipSync(Buffer.from(r.data as string, "base64")).toString(
+        "utf8",
+      );
+      events.push(...(JSON.parse(json) as unknown[]));
+    } else if (r.events) {
+      // Legacy uncompressed rows (pre-gzip migration).
+      events.push(...(r.events as unknown[]));
+    }
+  }
+  return events;
 }
 
 /**

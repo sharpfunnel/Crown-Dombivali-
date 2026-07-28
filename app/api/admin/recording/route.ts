@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/auth";
 import { getRecording } from "@/lib/analytics";
 
+// zlib (used to gunzip the stored chunks) is Node-only.
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

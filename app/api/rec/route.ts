@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { saveRecordingBatch } from "@/lib/analytics";
 
+// zlib (used for gzip storage) is Node-only.
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// A single rrweb batch can be large; allow a generous but bounded body.
-const MAX_EVENTS = 2000;
+const MAX_EVENTS = 5000;
 
 export async function POST(request: Request) {
   const cookies = request.headers.get("cookie") ?? "";
   const sid = cookies.match(/(?:^|;\s*)cds_sid=([^;]+)/)?.[1];
-  // No session cookie → not a tracked visitor; ignore quietly.
-  if (!sid) return new NextResponse(null, { status: 204 });
+
+  // The recorder can flush the FullSnapshot before the Tracker's first ping has
+  // set the session cookie. Tell the client to retry rather than dropping the
+  // chunk — losing the snapshot makes the whole replay unplayable.
+  if (!sid) return NextResponse.json({ ok: true, retry: true });
 
   let events: unknown[];
   let seq = 0;
@@ -30,6 +34,5 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[rec] save failed:", err);
   }
-  // Never surface errors to the page.
-  return new NextResponse(null, { status: 204 });
+  return NextResponse.json({ ok: true });
 }
