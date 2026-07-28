@@ -26,8 +26,8 @@ export const project = {
     encodeURIComponent("Premier Colony Ground, Kalyan-Shil Road, Dombivli 421203") +
     // z=17 → street level, so shop names and the surrounding roads are legible.
     "&t=&z=17&ie=UTF8&iwloc=B&output=embed",
-  phone: "+91 80972 66930",
-  phoneHref: "+918097266930",
+  phone: "+91 84510 47710",
+  phoneHref: "+918451047710",
   whatsappNumber: "+91 84510 47710",
   whatsappHref:
     "https://wa.me/918451047710?text=" +
