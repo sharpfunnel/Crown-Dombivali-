@@ -199,12 +199,15 @@ const REPLAY_SKIN = `
   font-variant-numeric: tabular-nums;
 }
 .replay-skin .rr-progress {
-  background: rgba(255,255,255,0.12) !important;
-  border-radius: 999px !important;
+  background: rgba(255,255,255,0.14) !important;
+  /* rrweb sandwiches the 12px track in 4px WHITE borders — recolor them to the
+     controller bg so the bar reads as a thin track, not a bright cream slab. */
+  border-top: 4px solid #0b1220 !important;
+  border-bottom: 4px solid #0b1220 !important;
+  border-radius: 2px !important;
 }
 .replay-skin .rr-progress__step {
-  background: rgba(238,97,35,0.4) !important;
-  border-radius: 999px !important;
+  background: rgba(238,97,35,0.55) !important;
 }
 .replay-skin .rr-progress__handler {
   background: #ee6123 !important;
