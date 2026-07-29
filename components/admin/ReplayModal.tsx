@@ -109,13 +109,6 @@ export function ReplayModal({
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <span className="hidden items-center gap-1.5 border border-white/12 px-2.5 py-1 text-[11px] font-medium text-white/55 sm:inline-flex">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
-                <rect x="3" y="11" width="18" height="10" rx="1" />
-                <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-              </svg>
-              Inputs masked
-            </span>
             <button
               type="button"
               onClick={onClose}
