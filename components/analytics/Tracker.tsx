@@ -21,26 +21,90 @@ export function Tracker() {
     // navigator.webdriver). This is what filters the datacenter "San Jose" bots.
     if (navigator.webdriver) return;
 
-    /* ---- context (sent with every batch) -------------------------------- */
-    const params = new URLSearchParams(window.location.search);
-    const utm: Record<string, string> = {};
-    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
-      const v = params.get(k);
-      if (v) utm[k] = v;
-    }
-    if (!utm.utm_source && params.get("gclid")) {
-      utm.utm_source = "google";
-      utm.utm_medium = utm.utm_medium || "cpc";
-    } else if (!utm.utm_source && params.get("fbclid")) {
-      utm.utm_source = "facebook";
-      utm.utm_medium = utm.utm_medium || "cpc";
-    }
+    /* ---- acquisition capture (once per session) ------------------------- */
+    // UTM + ad-click IDs + Meta ad-hierarchy params + a raw catch-all are
+    // captured from the LANDING url and cached in sessionStorage, so a later
+    // in-session navigation to a URL with no query string can't overwrite the
+    // attribution with nulls. Storage access is wrapped: some in-app webviews
+    // (Instagram/Facebook) and Safari private mode throw on it — fail open.
+    const ENTRY_KEY = "cds_smeta";
+    type EntryMeta = {
+      utm: Record<string, string>;
+      referrer: string | null;
+      gclid: string | null;
+      fbclid: string | null;
+      msclkid: string | null;
+      placement: string | null;
+      metaCampaignId: string | null;
+      metaAdsetId: string | null;
+      metaAdId: string | null;
+      /** Every landing-URL query param, verbatim — the catch-all safety net. */
+      rawParams: Record<string, string>;
+    };
+
+    const captureEntryMeta = (): EntryMeta => {
+      const params = new URLSearchParams(window.location.search);
+      const utm: Record<string, string> = {};
+      for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
+        const v = params.get(k);
+        if (v) utm[k] = v;
+      }
+      // Infer source/medium from ad-click IDs when the UTMs weren't tagged.
+      if (!utm.utm_source && params.get("gclid")) {
+        utm.utm_source = "google";
+        utm.utm_medium = utm.utm_medium || "cpc";
+      } else if (!utm.utm_source && (params.get("fbclid") || params.get("campaign_id"))) {
+        utm.utm_source = "facebook";
+        utm.utm_medium = utm.utm_medium || "cpc";
+      } else if (!utm.utm_source && params.get("msclkid")) {
+        utm.utm_source = "bing";
+        utm.utm_medium = utm.utm_medium || "cpc";
+      }
+      return {
+        utm,
+        referrer: document.referrer || null,
+        gclid: params.get("gclid"),
+        fbclid: params.get("fbclid"),
+        msclkid: params.get("msclkid"),
+        placement: params.get("placement"),
+        metaCampaignId: params.get("campaign_id"),
+        metaAdsetId: params.get("adset_id"),
+        metaAdId: params.get("ad_id"),
+        rawParams: Object.fromEntries(params.entries()),
+      };
+    };
+
+    const getEntryMeta = (): EntryMeta => {
+      try {
+        const cached = window.sessionStorage.getItem(ENTRY_KEY);
+        if (cached) return JSON.parse(cached) as EntryMeta;
+      } catch {
+        /* fall through and capture fresh */
+      }
+      const meta = captureEntryMeta();
+      try {
+        window.sessionStorage.setItem(ENTRY_KEY, JSON.stringify(meta));
+      } catch {
+        /* private mode / quota — still return meta, just don't persist */
+      }
+      return meta;
+    };
+
+    const entry = getEntryMeta();
     const context = {
       path: window.location.pathname,
-      referrer: document.referrer || null,
+      referrer: entry.referrer,
       screenW: window.innerWidth,
       screenH: window.innerHeight,
-      utm,
+      utm: entry.utm,
+      gclid: entry.gclid,
+      fbclid: entry.fbclid,
+      msclkid: entry.msclkid,
+      placement: entry.placement,
+      campaign_id: entry.metaCampaignId,
+      adset_id: entry.metaAdsetId,
+      ad_id: entry.metaAdId,
+      rawParams: entry.rawParams,
     };
 
     /* ---- event queue ---------------------------------------------------- */

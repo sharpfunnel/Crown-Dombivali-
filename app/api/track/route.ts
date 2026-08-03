@@ -38,6 +38,14 @@ export async function POST(request: Request) {
       screenW?: number;
       screenH?: number;
       utm?: Record<string, string>;
+      gclid?: string | null;
+      fbclid?: string | null;
+      msclkid?: string | null;
+      placement?: string | null;
+      campaign_id?: string | null;
+      adset_id?: string | null;
+      ad_id?: string | null;
+      rawParams?: Record<string, string>;
     };
     events?: TrackEvent[];
   };
@@ -62,6 +70,15 @@ export async function POST(request: Request) {
   const isNewSession = !cookies[SESSION_COOKIE];
 
   const utm = body.context?.utm ?? {};
+  const c = body.context ?? {};
+  // Keep only string values in the raw catch-all, cap count + length so a
+  // malicious URL can't bloat the row.
+  const rawParams: Record<string, string> = {};
+  if (c.rawParams && typeof c.rawParams === "object") {
+    for (const [k, v] of Object.entries(c.rawParams).slice(0, 40)) {
+      if (typeof v === "string") rawParams[k.slice(0, 60)] = v.slice(0, 300);
+    }
+  }
   const attribution: Attribution = {
     source: str(utm.utm_source, 120),
     medium: str(utm.utm_medium, 120),
@@ -70,6 +87,14 @@ export async function POST(request: Request) {
     content: str(utm.utm_content, 160),
     referrer: str(body.context?.referrer, 300),
     landingPath: str(body.context?.path, 300),
+    gclid: str(c.gclid, 400),
+    fbclid: str(c.fbclid, 400),
+    msclkid: str(c.msclkid, 400),
+    placement: str(c.placement, 120),
+    metaCampaignId: str(c.campaign_id, 80),
+    metaAdsetId: str(c.adset_id, 80),
+    metaAdId: str(c.ad_id, 80),
+    rawParams: Object.keys(rawParams).length ? rawParams : null,
   };
 
   const ua = h.get("user-agent");

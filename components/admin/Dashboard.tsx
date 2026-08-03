@@ -153,7 +153,27 @@ export function Dashboard({
               l.configuration || "—",
               l.budget || "—",
               l.source,
-              l.attrSource ? `${l.attrSource}/${l.attrMedium ?? "-"}` : "direct",
+              (() => {
+                const detail = [
+                  l.attrCampaign,
+                  l.attrContent && `ad: ${l.attrContent}`,
+                  l.attrTerm && `adset: ${l.attrTerm}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <div>
+                    <div>
+                      {l.attrSource
+                        ? `${l.attrSource}/${l.attrMedium ?? "-"}`
+                        : "direct"}
+                    </div>
+                    {detail && (
+                      <div className="text-xs text-white/40">{detail}</div>
+                    )}
+                  </div>
+                );
+              })(),
               geo(l.city, l.country),
               l.device || "—",
             ])}
@@ -211,10 +231,24 @@ export function Dashboard({
       {tab === "sessions" && (
         <Card title={`Recent sessions (${sessions.length})`}>
           <SimpleTable
-            head={["Started", "Source", "Location", "Device", "IP", "Views", "Scroll", "CTAs", "Time", "Lead?", "Replay"]}
+            head={["Started", "Source", "Campaign", "Acq.", "Location", "Device", "IP", "Views", "Scroll", "CTAs", "Time", "Lead?", "Replay"]}
             rows={sessions.map((s) => [
               when(s.startedAt),
               `${s.source}/${s.medium}`,
+              s.campaign || "—",
+              (() => {
+                const a = formatAcq(s);
+                return a ? (
+                  <span
+                    title={a.full}
+                    className="cursor-help text-white/70 underline decoration-dotted underline-offset-2"
+                  >
+                    {a.preview}
+                  </span>
+                ) : (
+                  <span className="text-white/25">—</span>
+                );
+              })(),
               geo(s.city, s.country),
               `${s.device || "—"}${s.browser ? ` · ${s.browser}` : ""}`,
               s.ip || "—",
@@ -459,4 +493,30 @@ function when(iso: string) {
 }
 function geo(city: string | null, country: string | null) {
   return [city, country].filter(Boolean).join(", ") || "—";
+}
+
+/**
+ * Acquisition summary for a session — the named ad-click / Meta ad-id fields
+ * plus the raw catch-all params, de-duped, for the Sessions "Acq." tooltip.
+ */
+function formatAcq(s: SessionRow): { preview: string; full: string } | null {
+  const named: [string, string | null][] = [
+    ["gclid", s.gclid],
+    ["fbclid", s.fbclid],
+    ["msclkid", s.msclkid],
+    ["placement", s.placement],
+    ["campaign_id", s.metaCampaignId],
+    ["adset_id", s.metaAdsetId],
+    ["ad_id", s.metaAdId],
+  ];
+  const raw = s.rawParams ? Object.entries(s.rawParams) : [];
+  const lines = new Set<string>();
+  for (const [k, v] of named) if (v) lines.add(`${k}=${v}`);
+  for (const [k, v] of raw) lines.add(`${k}=${v}`);
+  if (lines.size === 0) return null;
+  const count = raw.length || [...named].filter(([, v]) => v).length;
+  return {
+    preview: `${count} param${count === 1 ? "" : "s"}`,
+    full: [...lines].join("\n"),
+  };
 }

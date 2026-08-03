@@ -19,6 +19,16 @@ export type Attribution = {
   content?: string | null;
   referrer?: string | null;
   landingPath?: string | null;
+  // Ad-platform click IDs + Meta ad-hierarchy params, kept raw so a campaign
+  // rename can't break a join. rawParams is the catch-all for anything unnamed.
+  gclid?: string | null;
+  fbclid?: string | null;
+  msclkid?: string | null;
+  placement?: string | null;
+  metaCampaignId?: string | null;
+  metaAdsetId?: string | null;
+  metaAdId?: string | null;
+  rawParams?: Record<string, string> | null;
 };
 
 export type RequestContext = {
@@ -74,6 +84,14 @@ async function buildSchema() {
       content       TEXT,
       referrer      TEXT,
       landing_path  TEXT,
+      gclid            TEXT,
+      fbclid           TEXT,
+      msclkid          TEXT,
+      placement        TEXT,
+      meta_campaign_id TEXT,
+      meta_adset_id    TEXT,
+      meta_ad_id       TEXT,
+      raw_params       JSONB,
       ip            TEXT,
       country       TEXT,
       region        TEXT,
@@ -125,6 +143,19 @@ async function buildSchema() {
   await sql`CREATE INDEX IF NOT EXISTS recordings_session_idx ON recordings (session_id, seq)`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS session_id UUID`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id UUID`;
+  // Ad-click / Meta ad-hierarchy / raw-param capture (added incrementally).
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gclid TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbclid TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS msclkid TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS placement TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_campaign_id TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_adset_id TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_ad_id TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS raw_params JSONB`;
+  // Index what the dashboard filters/groups by; Meta campaign id is looked up
+  // on its own when joining against ad-platform spend.
+  await sql`CREATE INDEX IF NOT EXISTS sessions_campaign_idx ON sessions (source, medium, campaign)`;
+  await sql`CREATE INDEX IF NOT EXISTS sessions_meta_campaign_idx ON sessions (meta_campaign_id)`;
 }
 
 /** Create the visitor on first sight; only set first-touch attribution once. */
@@ -155,14 +186,24 @@ export async function upsertSession(
 ) {
   const existing = await sql`SELECT id FROM sessions WHERE id = ${id}`;
   if (existing.length === 0) {
+    // Store nothing (NULL) rather than an empty {} for direct traffic with no
+    // query string, so those rows stay clean.
+    const rawParams =
+      attr.rawParams && Object.keys(attr.rawParams).length
+        ? JSON.stringify(attr.rawParams)
+        : null;
     await sql`
       INSERT INTO sessions (
         id, visitor_id, source, medium, campaign, term, content, referrer, landing_path,
+        gclid, fbclid, msclkid, placement, meta_campaign_id, meta_adset_id, meta_ad_id, raw_params,
         ip, country, region, city, user_agent, device, browser, os, screen_w, screen_h
       ) VALUES (
         ${id}, ${visitorId}, ${attr.source ?? null}, ${attr.medium ?? null},
         ${attr.campaign ?? null}, ${attr.term ?? null}, ${attr.content ?? null},
         ${attr.referrer ?? null}, ${attr.landingPath ?? null},
+        ${attr.gclid ?? null}, ${attr.fbclid ?? null}, ${attr.msclkid ?? null},
+        ${attr.placement ?? null}, ${attr.metaCampaignId ?? null},
+        ${attr.metaAdsetId ?? null}, ${attr.metaAdId ?? null}, ${rawParams},
         ${ctx.ip ?? null}, ${ctx.country ?? null}, ${ctx.region ?? null}, ${ctx.city ?? null},
         ${ctx.userAgent ?? null}, ${ctx.device ?? null}, ${ctx.browser ?? null}, ${ctx.os ?? null},
         ${ctx.screenW ?? null}, ${ctx.screenH ?? null}
@@ -397,6 +438,8 @@ export type LeadRow = {
   attrSource: string | null;
   attrMedium: string | null;
   attrCampaign: string | null;
+  attrContent: string | null;
+  attrTerm: string | null;
   city: string | null;
   country: string | null;
   device: string | null;
@@ -408,6 +451,7 @@ export async function getLeads(limit = 100): Promise<LeadRow[]> {
     SELECT l.id, l.name, l.mobile, l.email, l.configuration, l.budget,
            l.source, l.created_at,
            s.source AS attr_source, s.medium AS attr_medium, s.campaign AS attr_campaign,
+           s.content AS attr_content, s.term AS attr_term,
            s.city, s.country, s.device
     FROM leads l
     LEFT JOIN sessions s ON s.id = l.session_id
@@ -426,6 +470,8 @@ export async function getLeads(limit = 100): Promise<LeadRow[]> {
     attrSource: r.attr_source,
     attrMedium: r.attr_medium,
     attrCampaign: r.attr_campaign,
+    attrContent: r.attr_content,
+    attrTerm: r.attr_term,
     city: r.city,
     country: r.country,
     device: r.device,
@@ -437,6 +483,7 @@ export type SessionRow = {
   startedAt: string;
   source: string;
   medium: string;
+  campaign: string | null;
   city: string | null;
   country: string | null;
   device: string | null;
@@ -447,6 +494,14 @@ export type SessionRow = {
   ctaClicks: number;
   durationMs: number;
   converted: boolean;
+  placement: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+  msclkid: string | null;
+  metaCampaignId: string | null;
+  metaAdsetId: string | null;
+  metaAdId: string | null;
+  rawParams: Record<string, string> | null;
 };
 
 export type CountRow = { label: string; count: number; sessions: number };
@@ -556,9 +611,11 @@ export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
   await ensureAnalyticsSchema();
   const rows = await sql`
     SELECT id, started_at, COALESCE(NULLIF(source,''),'direct') AS source,
-           COALESCE(NULLIF(medium,''),'(none)') AS medium,
+           COALESCE(NULLIF(medium,''),'(none)') AS medium, campaign,
            city, country, device, browser, ip,
-           page_views, max_scroll, cta_clicks, duration_ms, converted
+           page_views, max_scroll, cta_clicks, duration_ms, converted,
+           placement, gclid, fbclid, msclkid,
+           meta_campaign_id, meta_adset_id, meta_ad_id, raw_params
     FROM sessions
     ORDER BY started_at DESC
     LIMIT ${limit}
@@ -568,6 +625,7 @@ export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
     startedAt: r.started_at,
     source: r.source,
     medium: r.medium,
+    campaign: r.campaign,
     city: r.city,
     country: r.country,
     device: r.device,
@@ -578,5 +636,13 @@ export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
     ctaClicks: Number(r.cta_clicks),
     durationMs: Number(r.duration_ms),
     converted: r.converted,
+    placement: r.placement,
+    gclid: r.gclid,
+    fbclid: r.fbclid,
+    msclkid: r.msclkid,
+    metaCampaignId: r.meta_campaign_id,
+    metaAdsetId: r.meta_adset_id,
+    metaAdId: r.meta_ad_id,
+    rawParams: (r.raw_params as Record<string, string> | null) ?? null,
   }));
 }
