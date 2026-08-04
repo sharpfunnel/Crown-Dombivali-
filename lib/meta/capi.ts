@@ -55,6 +55,58 @@ const SITE_URL =
   "https://crown-dombivali.vercel.app";
 
 /**
+ * Auto-fire the server-side "Lead" conversion for a newly created lead.
+ *
+ * event_id is the lead's own id — the same value a browser Pixel would use as
+ * its eventID, so the two de-duplicate if a pixel is ever added. Returns null
+ * when CAPI isn't configured (dormant until env vars are set), so the caller
+ * records nothing rather than a spurious error. Never throws — an ad-reporting
+ * problem must not surface to the visitor whose form already succeeded.
+ */
+export async function sendLeadConversionEvent(
+  ctx: LeadContext,
+): Promise<ManualCapiResult | null> {
+  const pixelId = process.env.META_PIXEL_ID;
+  const token = process.env.META_CAPI_ACCESS_TOKEN;
+  if (!pixelId || !token) return null;
+
+  // event_time is the conversion moment — when the lead was created.
+  const eventTime = ctx.createdAt
+    ? Math.floor(new Date(ctx.createdAt).getTime() / 1000)
+    : Math.floor(Date.now() / 1000);
+  const body = buildEventBody(
+    ctx,
+    token,
+    { eventName: "Lead", eventTime, eventId: ctx.id, value: 0, currency: "INR" },
+    SITE_URL,
+  );
+
+  try {
+    const res = await fetch(eventsEndpoint(pixelId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      error?: { message?: string };
+      fbtrace_id?: string;
+    } | null;
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: json?.error?.message || `Graph API returned ${res.status}.`,
+      };
+    }
+    return { ok: true, eventId: ctx.id, fbtraceId: json?.fbtrace_id ?? null };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error contacting Meta.",
+    };
+  }
+}
+
+/**
  * Send a single conversion event for a lead. Returns a typed result rather
  * than throwing, so the caller can persist success/error to the lead row.
  */

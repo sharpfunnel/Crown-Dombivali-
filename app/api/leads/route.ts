@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { insertLead, type LeadInput, type LeadSource } from "@/lib/db";
-import { attributeLead } from "@/lib/analytics";
+import { attributeLead, getLeadForCapi, markLeadCapi } from "@/lib/analytics";
+import { sendLeadConversionEvent } from "@/lib/meta/capi";
 
 // Leads are written per request — never prerender or cache this handler.
 export const dynamic = "force-dynamic";
@@ -67,6 +68,23 @@ export async function POST(request: Request) {
     } catch (e) {
       console.error("[leads] attribution failed:", e);
     }
+
+    // Fire the server-side Meta "Lead" conversion AFTER the response is sent, so
+    // the visitor never waits on Meta. Dormant until META_PIXEL_ID + token are
+    // set; a failure only annotates the lead row, never breaks submission.
+    after(async () => {
+      try {
+        const ctx = await getLeadForCapi(saved.id);
+        if (!ctx) return;
+        const result = await sendLeadConversionEvent(ctx);
+        if (!result) return; // CAPI not configured — nothing to record
+        if (result.ok) await markLeadCapi(saved.id, new Date(), null);
+        else await markLeadCapi(saved.id, null, result.error);
+      } catch (e) {
+        console.error("[leads] CAPI send failed:", e);
+      }
+    });
+
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
   } catch (err) {
     // Log server-side; never leak DB details to the client.
