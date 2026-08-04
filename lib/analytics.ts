@@ -42,6 +42,9 @@ export type RequestContext = {
   os?: string | null;
   screenW?: number | null;
   screenH?: number | null;
+  /** Meta first-party cookies, read off the request in /api/track. */
+  fbc?: string | null;
+  fbp?: string | null;
 };
 
 // Memoise as a single shared promise so concurrent callers (the dashboard runs
@@ -92,6 +95,8 @@ async function buildSchema() {
       meta_adset_id    TEXT,
       meta_ad_id       TEXT,
       raw_params       JSONB,
+      fbc              TEXT,
+      fbp              TEXT,
       ip            TEXT,
       country       TEXT,
       region        TEXT,
@@ -155,6 +160,9 @@ async function buildSchema() {
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_adset_id TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_ad_id TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS raw_params JSONB`;
+  // Meta first-party cookies (_fbc / _fbp) — the strongest CAPI match signals.
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbc TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbp TEXT`;
   // Index what the dashboard filters/groups by; Meta campaign id is looked up
   // on its own when joining against ad-platform spend.
   await sql`CREATE INDEX IF NOT EXISTS sessions_campaign_idx ON sessions (source, medium, campaign)`;
@@ -199,6 +207,7 @@ export async function upsertSession(
       INSERT INTO sessions (
         id, visitor_id, source, medium, campaign, term, content, referrer, landing_path,
         gclid, fbclid, msclkid, placement, meta_campaign_id, meta_adset_id, meta_ad_id, raw_params,
+        fbc, fbp,
         ip, country, region, city, user_agent, device, browser, os, screen_w, screen_h
       ) VALUES (
         ${id}, ${visitorId}, ${attr.source ?? null}, ${attr.medium ?? null},
@@ -207,6 +216,7 @@ export async function upsertSession(
         ${attr.gclid ?? null}, ${attr.fbclid ?? null}, ${attr.msclkid ?? null},
         ${attr.placement ?? null}, ${attr.metaCampaignId ?? null},
         ${attr.metaAdsetId ?? null}, ${attr.metaAdId ?? null}, ${rawParams},
+        ${ctx.fbc ?? null}, ${ctx.fbp ?? null},
         ${ctx.ip ?? null}, ${ctx.country ?? null}, ${ctx.region ?? null}, ${ctx.city ?? null},
         ${ctx.userAgent ?? null}, ${ctx.device ?? null}, ${ctx.browser ?? null}, ${ctx.os ?? null},
         ${ctx.screenW ?? null}, ${ctx.screenH ?? null}
@@ -214,7 +224,15 @@ export async function upsertSession(
     `;
     await sql`UPDATE visitors SET sessions_count = sessions_count + 1, last_seen = now() WHERE id = ${visitorId}`;
   } else {
-    await sql`UPDATE sessions SET last_event_at = now() WHERE id = ${id}`;
+    // The pixel often writes _fbc/_fbp AFTER the first beacon, so backfill them
+    // on later events — first non-null wins, never overwrite a captured value.
+    await sql`
+      UPDATE sessions SET
+        last_event_at = now(),
+        fbc = COALESCE(fbc, ${ctx.fbc ?? null}),
+        fbp = COALESCE(fbp, ${ctx.fbp ?? null})
+      WHERE id = ${id}
+    `;
   }
 }
 
@@ -495,8 +513,9 @@ export async function getLeadForCapi(
 ): Promise<import("@/lib/meta/capi").LeadCapiContext | null> {
   await ensureAnalyticsSchema();
   const rows = await sql`
-    SELECT l.id, l.name, l.email, l.mobile, l.created_at,
-           s.ip, s.user_agent, s.country, s.city, s.fbclid
+    SELECT l.id, l.name, l.email, l.mobile, l.source, l.created_at,
+           s.ip, s.user_agent, s.country, s.region, s.city,
+           s.fbclid, s.fbc, s.fbp, s.started_at, s.landing_path
     FROM leads l
     LEFT JOIN sessions s ON s.id = l.session_id
     WHERE l.id = ${leadId}
@@ -504,16 +523,22 @@ export async function getLeadForCapi(
   if (rows.length === 0) return null;
   const r = rows[0];
   return {
-    leadId: String(r.id),
+    id: String(r.id),
+    createdAt: r.created_at ?? null,
     name: r.name ?? null,
     email: r.email ?? null,
     phone: r.mobile ?? null,
+    source: r.source ?? null,
     ip: r.ip ?? null,
     userAgent: r.user_agent ?? null,
     country: r.country ?? null,
+    region: r.region ?? null,
     city: r.city ?? null,
     fbclid: r.fbclid ?? null,
-    createdAt: r.created_at ?? null,
+    fbc: r.fbc ?? null,
+    fbp: r.fbp ?? null,
+    sessionStartedAt: r.started_at ?? null,
+    landingPath: r.landing_path ?? null,
   };
 }
 
