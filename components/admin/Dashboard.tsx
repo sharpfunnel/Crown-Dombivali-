@@ -13,6 +13,7 @@ import type {
 } from "@/lib/analytics";
 import { ClickMap } from "@/components/admin/ClickMap";
 import { ReplayModal } from "@/components/admin/ReplayModal";
+import { SendCapiModal } from "@/components/admin/SendCapiModal";
 
 type Tab = "overview" | "leads" | "behaviour" | "sessions" | "heatmap";
 
@@ -145,7 +146,7 @@ export function Dashboard({
       {tab === "leads" && (
         <Card title={`Leads (${leads.length})`}>
           <SimpleTable
-            head={["When", "Name", "Mobile", "Config", "Budget", "Form", "Source", "Location", "Device"]}
+            head={["When", "Name", "Mobile", "Config", "Budget", "Form", "Source", "Location", "Device", "Meta CAPI"]}
             rows={leads.map((l) => [
               when(l.createdAt),
               l.name,
@@ -176,6 +177,21 @@ export function Dashboard({
               })(),
               geo(l.city, l.country),
               l.device || "—",
+              <SendCapiModal
+                key={l.id}
+                lead={{
+                  id: l.id,
+                  name: l.name,
+                  mobile: l.mobile,
+                  email: l.email,
+                  city: l.city,
+                  country: l.country,
+                  metaAdId: l.metaAdId,
+                  placement: l.placement,
+                  capiSentAt: l.capiSentAt,
+                  capiError: l.capiError,
+                }}
+              />,
             ])}
             empty="No leads yet."
             scroll

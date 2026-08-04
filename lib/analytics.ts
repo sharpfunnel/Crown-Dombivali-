@@ -143,6 +143,9 @@ async function buildSchema() {
   await sql`CREATE INDEX IF NOT EXISTS recordings_session_idx ON recordings (session_id, seq)`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS session_id UUID`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id UUID`;
+  // Meta Conversions API send status (manual + any future auto-fire share these).
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS meta_capi_sent_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS meta_capi_error TEXT`;
   // Ad-click / Meta ad-hierarchy / raw-param capture (added incrementally).
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gclid TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbclid TEXT`;
@@ -443,16 +446,20 @@ export type LeadRow = {
   city: string | null;
   country: string | null;
   device: string | null;
+  metaAdId: string | null;
+  placement: string | null;
+  capiSentAt: string | null;
+  capiError: string | null;
 };
 
 export async function getLeads(limit = 100): Promise<LeadRow[]> {
   await ensureAnalyticsSchema();
   const rows = await sql`
     SELECT l.id, l.name, l.mobile, l.email, l.configuration, l.budget,
-           l.source, l.created_at,
+           l.source, l.created_at, l.meta_capi_sent_at, l.meta_capi_error,
            s.source AS attr_source, s.medium AS attr_medium, s.campaign AS attr_campaign,
            s.content AS attr_content, s.term AS attr_term,
-           s.city, s.country, s.device
+           s.city, s.country, s.device, s.meta_ad_id, s.placement
     FROM leads l
     LEFT JOIN sessions s ON s.id = l.session_id
     ORDER BY l.created_at DESC
@@ -475,7 +482,54 @@ export async function getLeads(limit = 100): Promise<LeadRow[]> {
     city: r.city,
     country: r.country,
     device: r.device,
+    metaAdId: r.meta_ad_id,
+    placement: r.placement,
+    capiSentAt: r.meta_capi_sent_at,
+    capiError: r.meta_capi_error,
   }));
+}
+
+/** Load a lead + its originating session for a Meta CAPI send. */
+export async function getLeadForCapi(
+  leadId: string,
+): Promise<import("@/lib/meta/capi").LeadCapiContext | null> {
+  await ensureAnalyticsSchema();
+  const rows = await sql`
+    SELECT l.id, l.name, l.email, l.mobile, l.created_at,
+           s.ip, s.user_agent, s.country, s.city, s.fbclid
+    FROM leads l
+    LEFT JOIN sessions s ON s.id = l.session_id
+    WHERE l.id = ${leadId}
+  `;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    leadId: String(r.id),
+    name: r.name ?? null,
+    email: r.email ?? null,
+    phone: r.mobile ?? null,
+    ip: r.ip ?? null,
+    userAgent: r.user_agent ?? null,
+    country: r.country ?? null,
+    city: r.city ?? null,
+    fbclid: r.fbclid ?? null,
+    createdAt: r.created_at ?? null,
+  };
+}
+
+/** Persist the outcome of a Meta CAPI send on the lead row. */
+export async function markLeadCapi(
+  leadId: string,
+  sentAt: Date | null,
+  error: string | null,
+): Promise<void> {
+  await ensureAnalyticsSchema();
+  await sql`
+    UPDATE leads
+    SET meta_capi_sent_at = ${sentAt ? sentAt.toISOString() : null},
+        meta_capi_error   = ${error}
+    WHERE id = ${leadId}
+  `;
 }
 
 export type SessionRow = {
