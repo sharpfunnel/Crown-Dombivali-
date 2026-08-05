@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { LeadSource } from "@/lib/db";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -58,6 +59,7 @@ export function useLeadForm(
 ) {
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const router = useRouter();
 
   /** Remove a field's error as the user corrects it. */
   function clearError(field: string) {
@@ -100,8 +102,18 @@ export function useLeadForm(
           source,
         }),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      setStatus("sent");
+      const payload = (await res.json().catch(() => null)) as
+        | { id?: string | number; error?: string }
+        | null;
+      if (!res.ok) throw new Error(payload?.error ?? `Request failed: ${res.status}`);
+
+      // Redirect to the stable /thank-you URL; the lead id lets that page enrich
+      // this same row with optional details. Stay "sending" through navigation
+      // so the button doesn't flash back to its idle label.
+      const leadId = payload?.id != null ? String(payload.id) : null;
+      router.push(
+        leadId ? `/thank-you?leadId=${encodeURIComponent(leadId)}` : "/thank-you",
+      );
     } catch (err) {
       console.error("[lead] submit failed:", err);
       setStatus("error");

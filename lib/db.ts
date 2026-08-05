@@ -70,3 +70,33 @@ export async function insertLead(lead: LeadInput) {
   `;
   return rows[0] as { id: string; created_at: string };
 }
+
+export type LeadEnrichment = {
+  email?: string | null;
+  configuration?: string | null;
+  budget?: string | null;
+  message?: string | null;
+};
+
+/**
+ * Fill in the optional details a visitor adds on the thank-you page. Only fields
+ * actually provided are written — COALESCE(new, existing) leaves the rest as-is,
+ * so submitting just a budget can't blank out an email captured earlier.
+ * Returns false when no lead matches the id.
+ */
+export async function updateLead(
+  id: string,
+  fields: LeadEnrichment,
+): Promise<boolean> {
+  await ensureSchema();
+  const rows = await sql`
+    UPDATE leads SET
+      email         = COALESCE(${fields.email ?? null}, email),
+      configuration = COALESCE(${fields.configuration ?? null}, configuration),
+      budget        = COALESCE(${fields.budget ?? null}, budget),
+      message       = COALESCE(${fields.message ?? null}, message)
+    WHERE id = ${id}
+    RETURNING id
+  `;
+  return rows.length > 0;
+}

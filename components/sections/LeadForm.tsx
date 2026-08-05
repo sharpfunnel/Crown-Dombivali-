@@ -1,58 +1,32 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { project, propertyPreferences } from "@/lib/project";
+import { project } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
-import { SuccessTick } from "@/components/ui/SuccessTick";
 import { FieldError } from "@/components/ui/FieldError";
 
 /**
- * Hero lead-capture form: Name, Mobile, Email, Configuration Interested.
- * Posts to /api/leads, which writes the row to Neon Postgres.
+ * Hero lead-capture form — deliberately just Name + Mobile to minimise friction.
+ * Posts to /api/leads (writes the row to Neon) and redirects to /thank-you,
+ * where the visitor can optionally add email, preference, budget and a message.
  */
 export function LeadForm({ compact = false }: { compact?: boolean }) {
-  const { submit, sending, sent, error, errors, clearError } = useLeadForm(
+  const { submit, sending, error, errors, clearError } = useLeadForm(
     "hero_price_sheet",
-    ["name", "mobile", "email", "configuration"],
+    ["name", "mobile"],
   );
 
   const box = `w-full border bg-ink/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)] backdrop-blur-xl ${
     compact ? "p-6" : "p-6 sm:p-8"
   } lg:max-w-md`;
 
-  // --- Success state ------------------------------------------------------
-  if (sent) {
-    return (
-      <div className={`${box} border-accent/40`}>
-        <div className="flex flex-col items-center py-6 text-center">
-          <span className="text-accent">
-            <SuccessTick />
-          </span>
-          <p className="mt-5 text-xl font-bold text-white">
-            Thank you, we&apos;ve got your details.
-          </p>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/60">
-            Our team will call you shortly with the price sheet, floor plans and
-            brochure.
-          </p>
-          <a
-            href={`tel:${project.phoneHref}`}
-            className="mt-6 inline-flex items-center gap-2 border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-accent hover:text-accent"
-          >
-            Prefer to talk now? {project.phone}
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   // --- Form ---------------------------------------------------------------
   return (
     <div className={`${box} border-white/15`}>
       <p className="text-lg font-bold text-white">Get Instant Price Sheet</p>
       <p className="mt-1.5 text-sm text-white/55">
-        Share your details and we&apos;ll send pricing, floor plans and the
-        brochure right away.
+        Share your name and number — we&apos;ll call you with pricing, floor
+        plans and the brochure right away.
       </p>
 
       <form
@@ -87,48 +61,6 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
             error={errors.mobile}
             onInput={() => clearError("mobile")}
           />
-          <Field
-            label="Email"
-            name="email"
-            id="lead-email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@email.com"
-            error={errors.email}
-            onInput={() => clearError("email")}
-          />
-
-          <div>
-            <label
-              htmlFor="lead-config"
-              className="mb-1.5 block text-xs tracking-[0.12em] text-white/45 uppercase"
-            >
-              Property Preference
-              <span className="ml-1 text-accent">*</span>
-            </label>
-            <select
-              id="lead-config"
-              name="configuration"
-              defaultValue=""
-              onChange={() => clearError("configuration")}
-              aria-invalid={!!errors.configuration}
-              className={`w-full appearance-none border bg-white/[0.04] px-4 py-3 text-sm text-white focus:outline-none ${
-                errors.configuration
-                  ? "border-red-400/70 focus:border-red-400"
-                  : "border-white/15 focus:border-accent"
-              }`}
-            >
-              <option value="" disabled className="bg-ink">
-                Select property preference
-              </option>
-              {propertyPreferences.map((p) => (
-                <option key={p} value={p} className="bg-ink">
-                  {p}
-                </option>
-              ))}
-            </select>
-            <FieldError message={errors.configuration} />
-          </div>
 
           <button
             type="submit"

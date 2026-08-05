@@ -1,5 +1,10 @@
 import { NextResponse, after } from "next/server";
-import { insertLead, type LeadInput, type LeadSource } from "@/lib/db";
+import {
+  insertLead,
+  updateLead,
+  type LeadInput,
+  type LeadSource,
+} from "@/lib/db";
 import { attributeLead, getLeadForCapi, markLeadCapi } from "@/lib/analytics";
 import { sendLeadConversionEvent } from "@/lib/meta/capi";
 
@@ -91,6 +96,47 @@ export async function POST(request: Request) {
     console.error("[leads] insert failed:", err);
     return NextResponse.json(
       { error: "Could not save your enquiry. Please call us instead." },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Enrich an existing lead with the optional details a visitor adds on the
+ * thank-you page. Identified by the lead's own id (returned from POST) — no
+ * separate session token needed. Only provided fields are written.
+ */
+export async function PATCH(request: Request) {
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const leadId = clean(body.leadId, 32);
+  if (!leadId || !/^\d+$/.test(leadId)) {
+    return NextResponse.json({ error: "A valid lead id is required." }, { status: 400 });
+  }
+
+  const email = clean(body.email, 160) || null;
+  const configuration = clean(body.configuration, 60) || null;
+  const budget = clean(body.budget, 60) || null;
+  const message = clean(body.message, 2000) || null;
+  if (!email && !configuration && !budget && !message) {
+    return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+  }
+
+  try {
+    const ok = await updateLead(leadId, { email, configuration, budget, message });
+    if (!ok) {
+      return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[leads] update failed:", err);
+    return NextResponse.json(
+      { error: "Could not save your details." },
       { status: 500 },
     );
   }
