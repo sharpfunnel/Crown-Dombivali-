@@ -1,24 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  CAPI_EVENT_TYPES as EVENT_TYPES,
+  CUSTOM_EVENT_NAME_PATTERN,
+} from "@/lib/meta/capi-constants";
 
 /**
  * Meta CAPI manual sender — a per-lead "Send" button + modal. Lets the operator
  * fire a conversion event (Purchase / Lead / … / Custom) for a lead, with an
  * optional value and an order/reference id used as the CAPI event_id for dedup
- * against a client-side Pixel. PII is hashed server-side; the preview here shows
- * the shape that will be sent, with user_data redacted.
+ * against the browser Pixel.
+ *
+ * The payload preview is fetched from /api/admin/capi/preview rather than built
+ * here: the server assembles it with the SAME builder the live send uses, so
+ * the preview cannot drift from what actually ships. This component posts only
+ * a lead id plus the operator's choices — PII is re-read server-side, and the
+ * access token never leaves the server (the preview shows "<ACCESS_TOKEN>").
  */
-
-// Mirrors CAPI_EVENT_TYPES in lib/meta/capi.ts (that module is server-only).
-const EVENT_TYPES = [
-  { value: "Purchase", label: "Purchase" },
-  { value: "Lead", label: "Lead" },
-  { value: "Subscribe", label: "Subscribe" },
-  { value: "CompleteRegistration", label: "Registration" },
-  { value: "StartTrial", label: "Start Trial" },
-  { value: "Custom", label: "Custom" },
-] as const;
 
 export type CapiLead = {
   id: string;
@@ -34,7 +33,13 @@ export type CapiLead = {
 };
 
 type SendResult =
-  | { ok: true; eventId: string; preview?: boolean }
+  | {
+      ok: true;
+      eventId: string;
+      preview?: boolean;
+      fbtraceId?: string | null;
+      eventsReceived?: number | null;
+    }
   | { ok: false; error: string };
 
 export function SendCapiModal({ lead }: { lead: CapiLead }) {
@@ -109,55 +114,83 @@ function ModalBody({
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SendResult | null>(null);
   const [copied, setCopied] = useState(false);
+  // Keyed by the choices it was built from, so a stale payload is never shown
+  // as if it described the current selection.
+  const [fetched, setFetched] = useState<{
+    key: string;
+    preview: string;
+    warnings: string[];
+  } | null>(null);
 
   const eventName =
     eventType === "Custom" ? customEventName.trim() : eventType;
   const numValue = Number(value);
   const hasValue = value.trim() !== "" && Number.isFinite(numValue) && numValue > 0;
 
-  const eventId = orderId.trim() || `lead_${lead.id}_${eventName || "EVENT"}`;
+  const nameValid =
+    !!eventName &&
+    (eventType !== "Custom" || CUSTOM_EVENT_NAME_PATTERN.test(eventName));
 
-  // Preview mirrors the server payload; user_data is redacted (hashed server-side).
-  const preview = useMemo(() => {
-    const userDataKeys: string[] = [];
-    if (lead.email) userDataKeys.push("em");
-    if (lead.mobile) userDataKeys.push("ph");
-    if (lead.name) userDataKeys.push("fn/ln");
-    if (lead.country) userDataKeys.push("country");
-    if (lead.city) userDataKeys.push("ct");
-    const custom: Record<string, unknown> = {};
-    if (hasValue) {
-      custom.value = numValue;
-      custom.currency = currency.toUpperCase();
-    }
-    if (orderId.trim()) custom.order_id = orderId.trim();
-    return JSON.stringify(
-      {
-        data: [
-          {
-            event_name: eventName || "(choose an event)",
-            event_time: "<now>",
-            action_source: "website",
-            event_id: eventId,
-            user_data: `{ ${userDataKeys.map((k) => `${k}: <sha256>`).join(", ")}, client_ip_address, client_user_agent }`,
-            ...(Object.keys(custom).length ? { custom_data: custom } : {}),
-          },
-        ],
-      },
-      null,
-      2,
-    );
-  }, [
-    lead,
-    eventName,
-    eventId,
-    hasValue,
-    numValue,
-    currency,
-    orderId,
-  ]);
+  const request = {
+    leadId: lead.id,
+    eventType,
+    customEventName: eventType === "Custom" ? customEventName : null,
+    value: hasValue ? numValue : null,
+    currency: hasValue ? currency : null,
+    orderId: orderId.trim() || null,
+  };
+  const requestKey = JSON.stringify(request);
 
-  const canSend = !!eventName && !sending;
+  // Fetch the real payload from the server whenever a choice changes. Debounced
+  // so typing an order id doesn't fire a request per keystroke.
+  useEffect(() => {
+    if (!nameValid) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/admin/capi/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: requestKey,
+        });
+        const data = (await res.json()) as {
+          payload?: unknown;
+          warnings?: string[];
+          error?: string;
+        };
+        setFetched({
+          key: requestKey,
+          preview:
+            res.ok && data.payload
+              ? JSON.stringify(data.payload, null, 2)
+              : (data.error ?? `Preview failed (HTTP ${res.status}).`),
+          warnings: res.ok ? (data.warnings ?? []) : [],
+        });
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+        setFetched({
+          key: requestKey,
+          preview: "Preview unavailable — could not reach the server.",
+          warnings: [],
+        });
+      }
+    }, 300);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [nameValid, requestKey]);
+
+  const current = fetched?.key === requestKey ? fetched : null;
+  const preview = !nameValid
+    ? eventType === "Custom" && customEventName.trim()
+      ? "Custom event names must be 1–50 letters, digits or underscores."
+      : "Choose an event to preview the payload."
+    : (current?.preview ?? "Loading preview…");
+  const warnings = nameValid ? (current?.warnings ?? []) : [];
+
+  const canSend = nameValid && !sending;
 
   const send = async () => {
     if (!canSend) return;
@@ -167,14 +200,8 @@ function ModalBody({
       const res = await fetch("/api/admin/capi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: lead.id,
-          eventType,
-          customEventName: eventType === "Custom" ? customEventName : null,
-          value: hasValue ? numValue : null,
-          currency: hasValue ? currency : null,
-          orderId: orderId.trim() || null,
-        }),
+        // Byte-identical to the body the preview was built from.
+        body: requestKey,
       });
       const data = (await res.json().catch(() => null)) as SendResult | null;
       const r: SendResult = data ?? { ok: false, error: `HTTP ${res.status}` };
@@ -309,8 +336,23 @@ function ModalBody({
                 />
               </Field>
 
-              {/* Preview */}
-              <Field label="Payload preview">
+              {/* Warnings — everything about this payload that would quietly
+                  cost a conversion or drag down match quality. */}
+              {warnings.length > 0 && (
+                <div className="border border-amber-400/30 bg-amber-500/10 px-3 py-2">
+                  <p className="mb-1 text-[11px] font-semibold tracking-wide text-amber-300 uppercase">
+                    Check before sending
+                  </p>
+                  <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-amber-200/85">
+                    {warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Preview — built server-side by the same code that sends. */}
+              <Field label="Payload preview (exactly what will be sent)">
                 <div className="relative">
                   <pre className="max-h-52 overflow-auto border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-white/70">
                     {preview}
@@ -354,7 +396,7 @@ function SuccessPanel({
   result,
   onClose,
 }: {
-  result: { ok: true; eventId: string; preview?: boolean };
+  result: Extract<SendResult, { ok: true }>;
   onClose: () => void;
 }) {
   return (
@@ -366,6 +408,28 @@ function SuccessPanel({
       </span>
       <p className="text-sm font-semibold text-white">Event sent to Meta</p>
       <p className="font-mono text-xs break-all text-white/50">{result.eventId}</p>
+      {/* fbtrace_id and events_received are what make this delivery findable
+          in Events Manager — anything other than 1 received is worth a look. */}
+      {!result.preview && (
+        <dl className="w-full max-w-sm space-y-1 border border-white/8 bg-white/[0.02] p-2.5 text-left text-[11px]">
+          <div className="flex justify-between gap-3">
+            <dt className="text-white/40">Events received</dt>
+            <dd
+              className={
+                result.eventsReceived === 1 ? "text-emerald-400" : "text-amber-300"
+              }
+            >
+              {result.eventsReceived ?? "—"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="shrink-0 text-white/40">fbtrace_id</dt>
+            <dd className="truncate font-mono text-white/60">
+              {result.fbtraceId || "—"}
+            </dd>
+          </div>
+        </dl>
+      )}
       {result.preview && (
         <p className="max-w-sm text-[11px] text-amber-300/80">
           Preview mode — Meta credentials aren&apos;t configured, so no real

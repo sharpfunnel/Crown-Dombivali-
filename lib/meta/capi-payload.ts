@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { REDACTED_ACCESS_TOKEN } from "@/lib/meta/capi-constants";
 
 /**
  * Shared Meta CAPI payload construction. The live/auto sender AND the manual
@@ -167,4 +168,90 @@ export function buildEventBody(
     body.test_event_code = process.env.META_CAPI_TEST_EVENT_CODE;
   }
   return body;
+}
+
+/**
+ * The exact body that would ship, with the access token swapped for a literal
+ * placeholder. Same builder as the live send — a preview assembled by separate
+ * code is a preview that lies — and the token never leaves the server.
+ */
+export function buildPreviewBody(
+  lead: LeadContext,
+  event: EventOptions,
+  siteUrl?: string,
+): Record<string, unknown> {
+  return buildEventBody(lead, REDACTED_ACCESS_TOKEN, event, siteUrl);
+}
+
+const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
+
+/**
+ * Everything about this payload that would silently cost conversions or match
+ * quality. Shown next to the preview so the operator sees it before sending,
+ * not a week later in Events Manager.
+ */
+export function buildEventWarnings(
+  lead: LeadContext,
+  event: EventOptions,
+): string[] {
+  const warnings: string[] = [];
+  const userData = buildUserData(lead);
+
+  // external_id is always present (it is derived from the lead id), so it is
+  // not evidence that Meta has anything real to match a person against.
+  const matchKeys = Object.keys(userData).filter((k) => k !== "external_id");
+  if (matchKeys.length === 0) {
+    warnings.push(
+      "user_data has no matchable identifier — Meta will reject this event.",
+    );
+  }
+
+  if (!event.eventId.trim()) {
+    warnings.push("event_id is blank — this event cannot de-duplicate.");
+  }
+
+  if (lead.phone) {
+    const rawDigits = lead.phone.replace(/\D/g, "");
+    const phone = normalizePhone(lead.phone, DEFAULT_COUNTRY_CODE);
+    if (!phone) {
+      warnings.push("Phone number has no digits — it will not be sent.");
+    } else if (phone !== rawDigits) {
+      // A number stored without a country code is hashed with +91 assumed. Right
+      // for the campaign's market, wrong — and unmatchable — for anyone abroad,
+      // which for an NRI-targeted project is a real possibility.
+      warnings.push(
+        `Phone had no country code — hashed as +${DEFAULT_COUNTRY_CODE}${rawDigits}. If this lead is not in India, the hash will not match.`,
+      );
+    }
+  } else {
+    warnings.push("No phone number on this lead.");
+  }
+
+  if (!userData.fbc && !userData.fbp) {
+    warnings.push(
+      "No fbc or fbp — this lead has no Meta click/browser id, so attribution will be weak.",
+    );
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (nowSeconds - event.eventTime > SEVEN_DAYS_SECONDS) {
+    warnings.push(
+      "event_time is more than 7 days old — Meta will reject this event.",
+    );
+  }
+
+  if (
+    event.eventName === "Purchase" &&
+    !(typeof event.value === "number" && event.value > 0)
+  ) {
+    warnings.push("Purchase without a value — set a value and currency.");
+  }
+
+  if (process.env.META_CAPI_TEST_EVENT_CODE) {
+    warnings.push(
+      "META_CAPI_TEST_EVENT_CODE is set — this event lands in Test events and counts as zero conversions.",
+    );
+  }
+
+  return warnings;
 }

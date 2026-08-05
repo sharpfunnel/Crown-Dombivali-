@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LeadSource } from "@/lib/db";
+import { trackPixelLead } from "@/lib/meta/pixel";
 
 type Status = "idle" | "sending" | "sent" | "error";
 export type FieldErrors = Record<string, string>;
@@ -101,6 +102,19 @@ export function useLeadForm(
         }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+      // Browser half of the Meta Lead conversion. The id returned here is the
+      // lead row's id, which /api/leads also uses as the CAPI `event_id` — the
+      // matching pair is what stops Meta counting this lead twice. Wrapped
+      // because an ad-tracking failure must never turn a saved lead into a
+      // visible error.
+      try {
+        const payload = (await res.json()) as { id?: string | number };
+        if (payload?.id != null) trackPixelLead(String(payload.id));
+      } catch (e) {
+        console.error("[lead] pixel Lead event failed:", e);
+      }
+
       setStatus("sent");
     } catch (err) {
       console.error("[lead] submit failed:", err);
