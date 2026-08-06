@@ -7,6 +7,7 @@ import { Eyebrow } from "@/components/ui/SectionHeading";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
 import { budgetOptions, project, propertyPreferences } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
+import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
 import { SuccessTick } from "@/components/ui/SuccessTick";
 import { FieldError } from "@/components/ui/FieldError";
 
@@ -158,17 +159,19 @@ function FullContactForm() {
             autoComplete="name"
             required
             error={errors.name}
+            sanitize={sanitizeNameInput}
             onInput={() => clearError("name")}
           />
           <Field
             label="Mobile"
             name="mobile"
             type="tel"
-            inputMode="numeric"
-            maxLength={14}
+            inputMode="tel"
+            maxLength={16}
             autoComplete="tel"
             required
             error={errors.mobile}
+            sanitize={sanitizePhoneInput}
             onInput={() => clearError("mobile")}
           />
         </div>
@@ -258,6 +261,7 @@ function Field({
   inputMode,
   maxLength,
   error,
+  sanitize,
   onInput,
 }: {
   label: string;
@@ -265,9 +269,10 @@ function Field({
   type?: string;
   required?: boolean;
   autoComplete?: string;
-  inputMode?: "numeric" | "text";
+  inputMode?: "numeric" | "tel" | "text";
   maxLength?: number;
   error?: string;
+  sanitize?: (value: string) => string;
   onInput?: () => void;
 }) {
   return (
@@ -286,7 +291,13 @@ function Field({
         autoComplete={autoComplete}
         inputMode={inputMode}
         maxLength={maxLength}
-        onInput={onInput}
+        onChange={(e) => {
+          if (sanitize) {
+            const s = sanitize(e.currentTarget.value);
+            if (s !== e.currentTarget.value) e.currentTarget.value = s;
+          }
+          onInput?.();
+        }}
         aria-invalid={!!error}
         className={`w-full border bg-white/[0.03] px-4 py-3 text-sm text-paper placeholder:text-paper/30 focus:outline-none ${
           error

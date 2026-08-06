@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { LeadSource } from "@/lib/db";
 import { trackPixelLead } from "@/lib/meta/pixel";
 import {
   trackFormSubmit,
   trackValidationError,
 } from "@/lib/track/client/forms";
+import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
 type Status = "idle" | "sending" | "sent" | "error";
 export type FieldErrors = Record<string, string>;
@@ -33,19 +35,19 @@ function validate(
     if (!val(field)) errors[field] = `${LABELS[field] ?? "This field"} is required.`;
   }
 
-  // Format checks — only when a value is present.
+  // Format checks — only when a value is present. Shared with the server.
   const name = val("name");
-  if (name && !/^[A-Za-z][A-Za-z\s.'-]{1,59}$/.test(name)) {
+  if (name && !isValidName(name)) {
     errors.name = "Enter a valid name (letters only).";
   }
 
-  const mobile = val("mobile").replace(/[\s-]/g, "");
-  if (mobile && !/^(?:\+?91)?[6-9]\d{9}$/.test(mobile)) {
-    errors.mobile = "Enter a valid 10-digit Indian mobile number.";
+  const mobile = val("mobile");
+  if (mobile && !isValidPhone(mobile)) {
+    errors.mobile = "Enter a valid phone number.";
   }
 
   const email = val("email");
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+  if (email && !isValidEmail(email)) {
     errors.email = "Enter a valid email address.";
   }
 
@@ -63,6 +65,7 @@ export function useLeadForm(
 ) {
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const router = useRouter();
 
   /** Remove a field's error as the user corrects it. */
   function clearError(field: string) {
@@ -111,26 +114,30 @@ export function useLeadForm(
           source,
         }),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const payload = (await res.json().catch(() => null)) as
+        | { id?: string | number; error?: string }
+        | null;
+      if (!res.ok) throw new Error(payload?.error ?? `Request failed: ${res.status}`);
+
+      const leadId = payload?.id != null ? String(payload.id) : null;
 
       // Only a submission that actually saved counts as a completion — the
       // native `submit` event fires for rejected input too, which is why the
       // forms collector doesn't listen for it.
       trackFormSubmit(form);
 
-      // Browser half of the Meta Lead conversion. The id returned here is the
-      // lead row's id, which /api/leads also uses as the CAPI `event_id` — the
-      // matching pair is what stops Meta counting this lead twice. Wrapped
-      // because an ad-tracking failure must never turn a saved lead into a
-      // visible error.
-      try {
-        const payload = (await res.json()) as { id?: string | number };
-        if (payload?.id != null) trackPixelLead(String(payload.id));
-      } catch (e) {
-        console.error("[lead] pixel Lead event failed:", e);
-      }
+      // Browser half of the Meta Lead conversion. The id is the lead row's id,
+      // which /api/leads also uses as the CAPI `event_id` — the matching pair
+      // is what stops Meta counting this lead twice. Fired BEFORE the redirect
+      // so the pixel call happens while this page is still mounted.
+      if (leadId) trackPixelLead(leadId);
 
-      setStatus("sent");
+      // Redirect to the stable /thank-you URL; the lead id lets that page enrich
+      // this same row with optional details. Stay "sending" through navigation
+      // so the button doesn't flash back to its idle label.
+      router.push(
+        leadId ? `/thank-you?leadId=${encodeURIComponent(leadId)}` : "/thank-you",
+      );
     } catch (err) {
       console.error("[lead] submit failed:", err);
       setStatus("error");
