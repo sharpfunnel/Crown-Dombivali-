@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { budgetOptions, project } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
+import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
 import { SuccessTick } from "@/components/ui/SuccessTick";
 import { FieldError } from "@/components/ui/FieldError";
 
@@ -69,7 +70,11 @@ export function SiteVisitForm() {
               type="text"
               autoComplete="name"
               placeholder="Your full name"
-              onInput={() => clearError("name")}
+              onChange={(e) => {
+                const s = sanitizeNameInput(e.currentTarget.value);
+                if (s !== e.currentTarget.value) e.currentTarget.value = s;
+                clearError("name");
+              }}
               aria-invalid={!!errors.name}
               className={inputClass(errors.name)}
             />
@@ -82,11 +87,15 @@ export function SiteVisitForm() {
               id="sv-mobile"
               name="mobile"
               type="tel"
-              inputMode="numeric"
-              maxLength={14}
+              inputMode="tel"
+              maxLength={16}
               autoComplete="tel"
-              placeholder="10-digit mobile"
-              onInput={() => clearError("mobile")}
+              placeholder="Your mobile number"
+              onChange={(e) => {
+                const s = sanitizePhoneInput(e.currentTarget.value);
+                if (s !== e.currentTarget.value) e.currentTarget.value = s;
+                clearError("mobile");
+              }}
               aria-invalid={!!errors.mobile}
               className={inputClass(errors.mobile)}
             />

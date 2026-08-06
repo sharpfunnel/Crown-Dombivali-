@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { project } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
+import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
 import { FieldError } from "@/components/ui/FieldError";
 
 /**
@@ -47,6 +48,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
             autoComplete="name"
             placeholder="Your full name"
             error={errors.name}
+            sanitize={sanitizeNameInput}
             onInput={() => clearError("name")}
           />
           <Field
@@ -54,11 +56,12 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
             name="mobile"
             id="lead-mobile"
             type="tel"
-            inputMode="numeric"
-            maxLength={14}
+            inputMode="tel"
+            maxLength={16}
             autoComplete="tel"
-            placeholder="10-digit mobile"
+            placeholder="Your mobile number"
             error={errors.mobile}
+            sanitize={sanitizePhoneInput}
             onInput={() => clearError("mobile")}
           />
 
@@ -107,6 +110,7 @@ function Field({
   placeholder,
   maxLength,
   error,
+  sanitize,
   onInput,
 }: {
   label: string;
@@ -114,10 +118,11 @@ function Field({
   id: string;
   type?: string;
   autoComplete?: string;
-  inputMode?: "numeric" | "text";
+  inputMode?: "numeric" | "tel" | "text";
   placeholder?: string;
   maxLength?: number;
   error?: string;
+  sanitize?: (value: string) => string;
   onInput?: () => void;
 }) {
   return (
@@ -137,7 +142,13 @@ function Field({
         inputMode={inputMode}
         placeholder={placeholder}
         maxLength={maxLength}
-        onInput={onInput}
+        onChange={(e) => {
+          if (sanitize) {
+            const s = sanitize(e.currentTarget.value);
+            if (s !== e.currentTarget.value) e.currentTarget.value = s;
+          }
+          onInput?.();
+        }}
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
         className={`w-full border bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none ${

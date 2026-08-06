@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { budgetOptions, propertyPreferences } from "@/lib/project";
+import { isValidEmail } from "@/lib/validation";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "success" | "error" | "invalid-email";
 
 /**
  * Optional follow-up on the thank-you page. PATCHes the SAME lead row (by id)
@@ -21,6 +22,10 @@ export function ThankYouOptionalForm({ leadId }: { leadId: string }) {
     const budget = (data.get("budget") as string) || "";
     const message = (data.get("message") as string) || "";
     if (!email && !configuration && !budget && !message) return; // need ≥1 field
+    if (email && !isValidEmail(email)) {
+      setStatus("invalid-email");
+      return;
+    }
 
     setStatus("submitting");
     try {
@@ -133,6 +138,11 @@ export function ThankYouOptionalForm({ leadId }: { leadId: string }) {
             {status === "submitting" ? "Saving…" : "Send details"}
           </button>
 
+          {status === "invalid-email" && (
+            <p role="alert" className="text-xs text-red-300">
+              Please enter a valid email address, or leave it blank.
+            </p>
+          )}
           {status === "error" && (
             <p role="alert" className="text-xs text-red-300">
               Couldn&apos;t save just now — but don&apos;t worry, we already have

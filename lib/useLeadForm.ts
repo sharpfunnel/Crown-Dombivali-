@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LeadSource } from "@/lib/db";
+import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
 type Status = "idle" | "sending" | "sent" | "error";
 export type FieldErrors = Record<string, string>;
@@ -29,19 +30,19 @@ function validate(
     if (!val(field)) errors[field] = `${LABELS[field] ?? "This field"} is required.`;
   }
 
-  // Format checks — only when a value is present.
+  // Format checks — only when a value is present. Shared with the server.
   const name = val("name");
-  if (name && !/^[A-Za-z][A-Za-z\s.'-]{1,59}$/.test(name)) {
+  if (name && !isValidName(name)) {
     errors.name = "Enter a valid name (letters only).";
   }
 
-  const mobile = val("mobile").replace(/[\s-]/g, "");
-  if (mobile && !/^(?:\+?91)?[6-9]\d{9}$/.test(mobile)) {
-    errors.mobile = "Enter a valid 10-digit Indian mobile number.";
+  const mobile = val("mobile");
+  if (mobile && !isValidPhone(mobile)) {
+    errors.mobile = "Enter a valid phone number.";
   }
 
   const email = val("email");
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+  if (email && !isValidEmail(email)) {
     errors.email = "Enter a valid email address.";
   }
 

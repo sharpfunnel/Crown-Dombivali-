@@ -7,6 +7,7 @@ import {
 } from "@/lib/db";
 import { attributeLead, getLeadForCapi, markLeadCapi } from "@/lib/analytics";
 import { sendLeadConversionEvent } from "@/lib/meta/capi";
+import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
 // Leads are written per request — never prerender or cache this handler.
 export const dynamic = "force-dynamic";
@@ -33,15 +34,24 @@ export async function POST(request: Request) {
 
   const name = clean(body.name, 120);
   const mobile = clean(body.mobile, 20);
-  const digits = mobile.replace(/\D/g, "");
+  const emailRaw = clean(body.email, 160);
 
-  // Name and a plausible phone number are the only hard requirements.
-  if (!name) {
-    return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  // Server-side re-validation — the boundary a bot/direct fetch can't bypass.
+  if (!name || !isValidName(name)) {
+    return NextResponse.json(
+      { error: "Please enter a valid name." },
+      { status: 400 },
+    );
   }
-  if (digits.length < 10 || digits.length > 15) {
+  if (!isValidPhone(mobile)) {
     return NextResponse.json(
       { error: "A valid mobile number is required." },
+      { status: 400 },
+    );
+  }
+  if (emailRaw && !isValidEmail(emailRaw)) {
+    return NextResponse.json(
+      { error: "Please enter a valid email address." },
       { status: 400 },
     );
   }
@@ -125,6 +135,12 @@ export async function PATCH(request: Request) {
   const message = clean(body.message, 2000) || null;
   if (!email && !configuration && !budget && !message) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+  }
+  if (email && !isValidEmail(email)) {
+    return NextResponse.json(
+      { error: "Please enter a valid email address." },
+      { status: 400 },
+    );
   }
 
   try {
