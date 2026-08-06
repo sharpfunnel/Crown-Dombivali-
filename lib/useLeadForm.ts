@@ -3,6 +3,10 @@
 import { useState } from "react";
 import type { LeadSource } from "@/lib/db";
 import { trackPixelLead } from "@/lib/meta/pixel";
+import {
+  trackFormSubmit,
+  trackValidationError,
+} from "@/lib/track/client/forms";
 
 type Status = "idle" | "sending" | "sent" | "error";
 export type FieldErrors = Record<string, string>;
@@ -79,6 +83,12 @@ export function useLeadForm(
     const fieldErrors = validate(data, required);
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length > 0) {
+      // These forms are noValidate and validate here, so the browser never
+      // fires `invalid` — report the rejections ourselves or the admin panel's
+      // per-field drop-off analysis has nothing to work with.
+      for (const field of Object.keys(fieldErrors)) {
+        trackValidationError(form, field);
+      }
       const first = form.querySelector<HTMLElement>(
         `[name="${Object.keys(fieldErrors)[0]}"]`,
       );
@@ -102,6 +112,11 @@ export function useLeadForm(
         }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+      // Only a submission that actually saved counts as a completion — the
+      // native `submit` event fires for rejected input too, which is why the
+      // forms collector doesn't listen for it.
+      trackFormSubmit(form);
 
       // Browser half of the Meta Lead conversion. The id returned here is the
       // lead row's id, which /api/leads also uses as the CAPI `event_id` — the

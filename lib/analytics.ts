@@ -39,9 +39,20 @@ export type RequestContext = {
   userAgent?: string | null;
   device?: string | null;
   browser?: string | null;
+  browserVersion?: string | null;
   os?: string | null;
+  osVersion?: string | null;
+  /** Viewport (window.innerWidth/Height) — what the layout actually got. */
   screenW?: number | null;
   screenH?: number | null;
+  /** Physical screen (window.screen.width/height) — the hardware resolution. */
+  deviceScreenW?: number | null;
+  deviceScreenH?: number | null;
+  language?: string | null;
+  timezone?: string | null;
+  /** Network Information API. Safari/Firefox don't implement it — expect nulls. */
+  network?: string | null;
+  downlink?: number | null;
   /** Meta first-party cookies, read off the request in /api/track. */
   fbc?: string | null;
   fbp?: string | null;
@@ -167,6 +178,55 @@ async function buildSchema() {
   // on its own when joining against ad-platform spend.
   await sql`CREATE INDEX IF NOT EXISTS sessions_campaign_idx ON sessions (source, medium, campaign)`;
   await sql`CREATE INDEX IF NOT EXISTS sessions_meta_campaign_idx ON sessions (meta_campaign_id)`;
+
+  /* --- Tech-stack / environment columns -----------------------------------
+     screen_w/screen_h were always the VIEWPORT (window.innerWidth/Height);
+     device_screen_* is the physical resolution. Both are worth having: the
+     first explains layout bugs, the second describes the hardware. */
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_screen_w INT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_screen_h INT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS browser_version TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS os_version TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS language TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS timezone TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS network TEXT`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS downlink NUMERIC`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_returning BOOLEAN NOT NULL DEFAULT false`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS exit_path TEXT`;
+  /* Any non-scroll, non-CTA engagement (form field, rage click, …). Counted on
+     the row so "did this visit bounce" stays a single-table read instead of a
+     correlated scan over the events table on every dashboard hit. */
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS interactions INT NOT NULL DEFAULT 0`;
+
+  /* Bounce lives in the schema, not in each dashboard query, so every page
+     agrees on what it means. A generated column recomputes on every write to
+     the row, so a visit stops being a bounce the moment it scrolls, clicks or
+     converts. The definition is deliberately stricter than "one pageview": a
+     fast reader who scrolled a quarter of the page did not bounce. */
+  await sql`
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_bounce BOOLEAN
+      GENERATED ALWAYS AS (
+        page_views <= 1
+        AND duration_ms < 10000
+        AND max_scroll < 25
+        AND cta_clicks = 0
+        AND interactions = 0
+        AND NOT converted
+      ) STORED
+  `;
+
+  // Lead pipeline status — app-enforced, not a DB enum, so adding a stage later
+  // is a code change rather than a migration.
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new'`;
+
+  // Every dashboard query is date-ranged (?days=7|14|30|90), so the range
+  // predicate is the one thing that must never be a sequential scan.
+  await sql`CREATE INDEX IF NOT EXISTS sessions_started_idx ON sessions (started_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS sessions_last_event_idx ON sessions (last_event_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS visitors_first_seen_idx ON visitors (first_seen DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS leads_created_idx ON leads (created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS events_type_created_idx ON events (type, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS events_session_created_idx ON events (session_id, created_at)`;
 }
 
 /** Create the visitor on first sight; only set first-touch attribution once. */
@@ -203,12 +263,25 @@ export async function upsertSession(
       attr.rawParams && Object.keys(attr.rawParams).length
         ? JSON.stringify(attr.rawParams)
         : null;
+
+    // Count the visit BEFORE inserting the session, so the returned tally tells
+    // us whether this browser has been here before. sessions_count is now 1 for
+    // a first-ever visit, so anything above that is a return.
+    const bumped = await sql`
+      UPDATE visitors SET sessions_count = sessions_count + 1, last_seen = now()
+      WHERE id = ${visitorId}
+      RETURNING sessions_count
+    `;
+    const isReturning = Number(bumped[0]?.sessions_count ?? 1) > 1;
+
     await sql`
       INSERT INTO sessions (
         id, visitor_id, source, medium, campaign, term, content, referrer, landing_path,
         gclid, fbclid, msclkid, placement, meta_campaign_id, meta_adset_id, meta_ad_id, raw_params,
         fbc, fbp,
-        ip, country, region, city, user_agent, device, browser, os, screen_w, screen_h
+        ip, country, region, city, user_agent, device, browser, browser_version, os, os_version,
+        screen_w, screen_h, device_screen_w, device_screen_h,
+        language, timezone, network, downlink, is_returning, exit_path
       ) VALUES (
         ${id}, ${visitorId}, ${attr.source ?? null}, ${attr.medium ?? null},
         ${attr.campaign ?? null}, ${attr.term ?? null}, ${attr.content ?? null},
@@ -218,11 +291,16 @@ export async function upsertSession(
         ${attr.metaAdsetId ?? null}, ${attr.metaAdId ?? null}, ${rawParams},
         ${ctx.fbc ?? null}, ${ctx.fbp ?? null},
         ${ctx.ip ?? null}, ${ctx.country ?? null}, ${ctx.region ?? null}, ${ctx.city ?? null},
-        ${ctx.userAgent ?? null}, ${ctx.device ?? null}, ${ctx.browser ?? null}, ${ctx.os ?? null},
-        ${ctx.screenW ?? null}, ${ctx.screenH ?? null}
+        ${ctx.userAgent ?? null}, ${ctx.device ?? null},
+        ${ctx.browser ?? null}, ${ctx.browserVersion ?? null},
+        ${ctx.os ?? null}, ${ctx.osVersion ?? null},
+        ${ctx.screenW ?? null}, ${ctx.screenH ?? null},
+        ${ctx.deviceScreenW ?? null}, ${ctx.deviceScreenH ?? null},
+        ${ctx.language ?? null}, ${ctx.timezone ?? null},
+        ${ctx.network ?? null}, ${ctx.downlink ?? null},
+        ${isReturning}, ${attr.landingPath ?? null}
       )
     `;
-    await sql`UPDATE visitors SET sessions_count = sessions_count + 1, last_seen = now() WHERE id = ${visitorId}`;
   } else {
     // The pixel often writes _fbc/_fbp AFTER the first beacon, so backfill them
     // on later events — first non-null wins, never overwrite a captured value.
@@ -265,17 +343,45 @@ export async function recordEvents(
   const duration = events
     .filter((e) => e.type === "time")
     .reduce((m, e) => Math.max(m, e.value ?? 0), 0);
+  // Deliberate engagement other than scrolling or a CTA. A visit with any of
+  // these is not a bounce however briefly it lasted.
+  const interactions = events.filter((e) =>
+    ENGAGEMENT_TYPES.has(e.type),
+  ).length;
+  // Last page seen in this batch — batches arrive in order, so the final
+  // pageview of the final batch ends up as the session's exit page.
+  const lastPath =
+    events.filter((e) => e.type === "pageview").at(-1)?.path ?? null;
 
   await sql`
     UPDATE sessions SET
       last_event_at = now(),
-      page_views  = page_views + ${pageViews},
-      cta_clicks  = cta_clicks + ${ctaClicks},
-      max_scroll  = GREATEST(max_scroll, ${maxScroll}),
-      duration_ms = GREATEST(duration_ms, ${duration})
+      page_views   = page_views + ${pageViews},
+      cta_clicks   = cta_clicks + ${ctaClicks},
+      interactions = interactions + ${interactions},
+      max_scroll   = GREATEST(max_scroll, ${maxScroll}),
+      duration_ms  = GREATEST(duration_ms, ${duration}),
+      exit_path    = COALESCE(${lastPath}, exit_path)
     WHERE id = ${sessionId}
   `;
 }
+
+/**
+ * Event types that count as engagement for the bounce definition. Passive
+ * signals (pageview, time, section_view, hover, vital) are excluded on purpose
+ * — they happen whether or not the visitor did anything.
+ */
+const ENGAGEMENT_TYPES = new Set([
+  "click",
+  "form_start",
+  "field_focus",
+  "field_complete",
+  "form_submit",
+  "validation_error",
+  "rage_click",
+  "dead_click",
+  "dbl_click",
+]);
 
 /** Mark a session + visitor as converted, and stamp the lead with its journey. */
 export async function attributeLead(
@@ -378,134 +484,8 @@ export async function purgeOldData(days = 90): Promise<{
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Admin dashboard queries                                                    */
+/*  Meta CAPI lead lookup                                                      */
 /* -------------------------------------------------------------------------- */
-
-export type Overview = {
-  visitors: number;
-  sessions: number;
-  leads: number;
-  convertedSessions: number;
-  scrolled50: number;
-  ctaSessions: number;
-  convRate: number;
-  avgDurationMs: number;
-};
-
-export async function getOverview(): Promise<Overview> {
-  await ensureAnalyticsSchema();
-  const [row] = await sql`
-    SELECT
-      (SELECT count(*) FROM visitors)                              AS visitors,
-      (SELECT count(*) FROM sessions)                              AS sessions,
-      (SELECT count(*) FROM leads)                                 AS leads,
-      (SELECT count(*) FROM sessions WHERE converted)              AS converted_sessions,
-      (SELECT count(*) FROM sessions WHERE max_scroll >= 50)       AS scrolled50,
-      (SELECT count(*) FROM sessions WHERE cta_clicks > 0)         AS cta_sessions,
-      (SELECT COALESCE(avg(duration_ms),0) FROM sessions WHERE duration_ms > 0) AS avg_duration
-  `;
-  const sessions = Number(row.sessions) || 0;
-  const converted = Number(row.converted_sessions) || 0;
-  return {
-    visitors: Number(row.visitors) || 0,
-    sessions,
-    leads: Number(row.leads) || 0,
-    convertedSessions: converted,
-    scrolled50: Number(row.scrolled50) || 0,
-    ctaSessions: Number(row.cta_sessions) || 0,
-    // Session conversion rate — bounded 0–100%.
-    convRate: sessions ? (converted / sessions) * 100 : 0,
-    avgDurationMs: Number(row.avg_duration) || 0,
-  };
-}
-
-export type SourceRow = {
-  source: string;
-  medium: string;
-  sessions: number;
-  leads: number;
-};
-
-export async function getTrafficSources(): Promise<SourceRow[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT
-      COALESCE(NULLIF(source,''), 'direct')  AS source,
-      COALESCE(NULLIF(medium,''), '(none)')  AS medium,
-      count(*)                               AS sessions,
-      count(*) FILTER (WHERE converted)      AS leads
-    FROM sessions
-    GROUP BY 1, 2
-    ORDER BY sessions DESC
-    LIMIT 20
-  `;
-  return rows.map((r) => ({
-    source: r.source,
-    medium: r.medium,
-    sessions: Number(r.sessions),
-    leads: Number(r.leads),
-  }));
-}
-
-export type LeadRow = {
-  id: string;
-  name: string;
-  mobile: string;
-  email: string | null;
-  configuration: string | null;
-  budget: string | null;
-  source: string;
-  createdAt: string;
-  attrSource: string | null;
-  attrMedium: string | null;
-  attrCampaign: string | null;
-  attrContent: string | null;
-  attrTerm: string | null;
-  city: string | null;
-  country: string | null;
-  device: string | null;
-  metaAdId: string | null;
-  placement: string | null;
-  capiSentAt: string | null;
-  capiError: string | null;
-};
-
-export async function getLeads(limit = 100): Promise<LeadRow[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT l.id, l.name, l.mobile, l.email, l.configuration, l.budget,
-           l.source, l.created_at, l.meta_capi_sent_at, l.meta_capi_error,
-           s.source AS attr_source, s.medium AS attr_medium, s.campaign AS attr_campaign,
-           s.content AS attr_content, s.term AS attr_term,
-           s.city, s.country, s.device, s.meta_ad_id, s.placement
-    FROM leads l
-    LEFT JOIN sessions s ON s.id = l.session_id
-    ORDER BY l.created_at DESC
-    LIMIT ${limit}
-  `;
-  return rows.map((r) => ({
-    id: String(r.id),
-    name: r.name,
-    mobile: r.mobile,
-    email: r.email,
-    configuration: r.configuration,
-    budget: r.budget,
-    source: r.source,
-    createdAt: r.created_at,
-    attrSource: r.attr_source,
-    attrMedium: r.attr_medium,
-    attrCampaign: r.attr_campaign,
-    attrContent: r.attr_content,
-    attrTerm: r.attr_term,
-    city: r.city,
-    country: r.country,
-    device: r.device,
-    metaAdId: r.meta_ad_id,
-    placement: r.placement,
-    capiSentAt: r.meta_capi_sent_at,
-    capiError: r.meta_capi_error,
-  }));
-}
 
 /** Load a lead + its originating session for a Meta CAPI send. */
 export async function getLeadForCapi(
@@ -555,173 +535,4 @@ export async function markLeadCapi(
         meta_capi_error   = ${error}
     WHERE id = ${leadId}
   `;
-}
-
-export type SessionRow = {
-  id: string;
-  startedAt: string;
-  source: string;
-  medium: string;
-  campaign: string | null;
-  city: string | null;
-  country: string | null;
-  device: string | null;
-  browser: string | null;
-  ip: string | null;
-  pageViews: number;
-  maxScroll: number;
-  ctaClicks: number;
-  durationMs: number;
-  converted: boolean;
-  placement: string | null;
-  gclid: string | null;
-  fbclid: string | null;
-  msclkid: string | null;
-  metaCampaignId: string | null;
-  metaAdsetId: string | null;
-  metaAdId: string | null;
-  rawParams: Record<string, string> | null;
-};
-
-export type CountRow = { label: string; count: number; sessions: number };
-
-/** Which CTAs get clicked, and by how many distinct sessions. */
-export async function getTopCtas(): Promise<CountRow[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT COALESCE(label, 'Unlabelled') AS label,
-           count(*)                      AS count,
-           count(DISTINCT session_id)    AS sessions
-    FROM events WHERE type = 'cta_click'
-    GROUP BY 1 ORDER BY count DESC LIMIT 20
-  `;
-  return rows.map((r) => ({
-    label: r.label,
-    count: Number(r.count),
-    sessions: Number(r.sessions),
-  }));
-}
-
-/** How many sessions actually saw each section (drop-off analysis). */
-export async function getSectionReach(): Promise<CountRow[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT label,
-           count(DISTINCT session_id) AS sessions,
-           count(*)                   AS count
-    FROM events WHERE type = 'section_view' AND label IS NOT NULL
-    GROUP BY 1 ORDER BY sessions DESC LIMIT 30
-  `;
-  return rows.map((r) => ({
-    label: r.label,
-    count: Number(r.count),
-    sessions: Number(r.sessions),
-  }));
-}
-
-export type ScrollBucket = { band: string; sessions: number };
-
-/** Distribution of how far sessions scrolled. */
-export async function getScrollBuckets(): Promise<ScrollBucket[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT
-      count(*) FILTER (WHERE max_scroll < 25)                       AS b0,
-      count(*) FILTER (WHERE max_scroll >= 25 AND max_scroll < 50)  AS b25,
-      count(*) FILTER (WHERE max_scroll >= 50 AND max_scroll < 75)  AS b50,
-      count(*) FILTER (WHERE max_scroll >= 75 AND max_scroll < 100) AS b75,
-      count(*) FILTER (WHERE max_scroll >= 100)                     AS b100
-    FROM sessions
-  `;
-  const r = rows[0];
-  return [
-    { band: "0–25%", sessions: Number(r.b0) },
-    { band: "25–50%", sessions: Number(r.b25) },
-    { band: "50–75%", sessions: Number(r.b50) },
-    { band: "75–99%", sessions: Number(r.b75) },
-    { band: "100%", sessions: Number(r.b100) },
-  ];
-}
-
-export type ClickPoint = {
-  x: number;
-  y: number;
-  device: string | null;
-  label: string | null;
-};
-
-/** All click coordinates for the heatmap (CTA and non-CTA). */
-export async function getClickPoints(limit = 5000): Promise<ClickPoint[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT (e.meta->>'x')::int AS x, (e.meta->>'y')::int AS y,
-           s.device AS device, e.label AS label
-    FROM events e
-    LEFT JOIN sessions s ON s.id = e.session_id
-    WHERE e.type IN ('click', 'cta_click')
-      AND e.meta ? 'x' AND e.meta ? 'y'
-    ORDER BY e.created_at DESC
-    LIMIT ${limit}
-  `;
-  return rows.map((r) => ({
-    x: Number(r.x),
-    y: Number(r.y),
-    device: r.device,
-    label: r.label,
-  }));
-}
-
-export type SectionMarker = { label: string; y: number };
-
-/** Average normalised top position of each section, for heatmap guide lines. */
-export async function getSectionMarkers(): Promise<SectionMarker[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT label, round(avg((meta->>'y')::numeric))::int AS y
-    FROM events
-    WHERE type = 'section_view' AND meta ? 'y' AND label IS NOT NULL
-    GROUP BY label
-    ORDER BY y
-  `;
-  return rows.map((r) => ({ label: r.label, y: Number(r.y) }));
-}
-
-export async function getRecentSessions(limit = 50): Promise<SessionRow[]> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT id, started_at, COALESCE(NULLIF(source,''),'direct') AS source,
-           COALESCE(NULLIF(medium,''),'(none)') AS medium, campaign,
-           city, country, device, browser, ip,
-           page_views, max_scroll, cta_clicks, duration_ms, converted,
-           placement, gclid, fbclid, msclkid,
-           meta_campaign_id, meta_adset_id, meta_ad_id, raw_params
-    FROM sessions
-    ORDER BY started_at DESC
-    LIMIT ${limit}
-  `;
-  return rows.map((r) => ({
-    id: String(r.id),
-    startedAt: r.started_at,
-    source: r.source,
-    medium: r.medium,
-    campaign: r.campaign,
-    city: r.city,
-    country: r.country,
-    device: r.device,
-    browser: r.browser,
-    ip: r.ip,
-    pageViews: Number(r.page_views),
-    maxScroll: Number(r.max_scroll),
-    ctaClicks: Number(r.cta_clicks),
-    durationMs: Number(r.duration_ms),
-    converted: r.converted,
-    placement: r.placement,
-    gclid: r.gclid,
-    fbclid: r.fbclid,
-    msclkid: r.msclkid,
-    metaCampaignId: r.meta_campaign_id,
-    metaAdsetId: r.meta_adset_id,
-    metaAdId: r.meta_ad_id,
-    rawParams: (r.raw_params as Record<string, string> | null) ?? null,
-  }));
 }

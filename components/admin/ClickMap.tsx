@@ -1,9 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClickPoint, SectionMarker } from "@/lib/analytics";
+import { useEffect, useRef, useState } from "react";
+import type { HeatPoint } from "@/lib/admin/behaviour";
+import type { SectionReach } from "@/lib/admin/behaviour";
 
-type Device = "all" | "desktop" | "mobile";
+/**
+ * Interaction heatmap overlaid on a live preview of the page, so every hot spot
+ * can be read against the real layout.
+ *
+ * Coordinates are stored normalised (0–1000 on both axes) and mapped onto the
+ * embedded page's rendered size — which is what lets a phone tap and a desktop
+ * click share one coordinate space. The site loads in a same-origin iframe (its
+ * tracker refuses to run when embedded, so the preview records nothing) and is
+ * scaled to fit the panel.
+ *
+ * Filtering lives in the URL and arrives as props; the only local state here is
+ * the page-visibility toggle, which is a viewing preference rather than a query.
+ */
 
 const SECTION_LABELS: Record<string, string> = {
   top: "Hero",
@@ -20,40 +33,32 @@ const SECTION_LABELS: Record<string, string> = {
   contact: "Contact",
 };
 
-/**
- * Click heatmap overlaid on a live preview of the site, so each hot spot can be
- * read against the real page. Coordinates are stored normalised (0–1000 on both
- * axes); we map them onto the embedded page's rendered width/height. The site is
- * loaded in a same-origin iframe (its tracker skips embedded contexts), scaled
- * to fit the panel.
- */
 export function ClickMap({
   points,
   markers,
+  path,
+  device,
+  kind,
 }: {
-  points: ClickPoint[];
-  markers: SectionMarker[];
+  points: HeatPoint[];
+  markers: SectionReach[];
+  path: string;
+  device: string | null;
+  kind: "click" | "hover";
 }) {
-  const [device, setDevice] = useState<Device>("all");
   const [showPage, setShowPage] = useState(true);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const frameWidth = device === "mobile" ? 390 : 1200;
+  // Mobile and desktop are genuinely different layouts — previewing mobile
+  // points over a 1200px render would put every hot spot in the wrong place.
+  const frameWidth = device === "mobile" ? 390 : device === "tablet" ? 820 : 1200;
   const [frameHeight, setFrameHeight] = useState(2600);
   const [scale, setScale] = useState(1);
 
-  const filtered = useMemo(
-    () =>
-      device === "all"
-        ? points
-        : points.filter((p) => (p.device ?? "desktop") === device),
-    [points, device],
-  );
-
-  // Fit the fixed-width preview into the available panel width.
+  // Fit the fixed-width preview into whatever width the panel has.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -64,82 +69,79 @@ export function ClickMap({
     return () => ro.disconnect();
   }, [frameWidth]);
 
-  // Read the embedded page's real height so the overlay lines up.
+  // Read the embedded page's real height so the overlay lines up with it.
   const onFrameLoad = () => {
     try {
       const doc = iframeRef.current?.contentWindow?.document;
       if (doc) {
-        const h = Math.max(
-          doc.documentElement.scrollHeight,
-          doc.body.scrollHeight,
+        setFrameHeight(
+          Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight),
         );
-        setFrameHeight(h);
       }
     } catch {
-      /* same-origin expected; ignore if blocked */
+      /* same-origin expected; ignore if a browser blocks it anyway */
     }
   };
 
-  // Draw the heat.
+  // Draw the heat: accumulate soft radial blobs into an alpha mask, then map
+  // that alpha through a colour ramp. Doing it in one pass per point would
+  // give hard-edged circles instead of a continuous field.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, frameWidth, frameHeight);
+    if (points.length === 0) return;
 
     const heat = document.createElement("canvas");
     heat.width = frameWidth;
     heat.height = frameHeight;
-    const hctx = heat.getContext("2d")!;
-    const radius = Math.round(frameWidth * 0.02);
-    for (const p of filtered) {
-      const x = (p.x / 1000) * frameWidth;
-      const y = (p.y / 1000) * frameHeight;
-      const g = hctx.createRadialGradient(x, y, 0, x, y, radius);
-      g.addColorStop(0, "rgba(0,0,0,0.18)");
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      hctx.fillStyle = g;
+    const hctx = heat.getContext("2d");
+    if (!hctx) return;
+
+    // Hover samples are sparse and diffuse; clicks are precise. Same radius for
+    // both would make the hover map a single smear.
+    const radius = Math.round(frameWidth * (kind === "hover" ? 0.035 : 0.02));
+    for (const point of points) {
+      const x = (point.x / 1000) * frameWidth;
+      const y = (point.y / 1000) * frameHeight;
+      const gradient = hctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, "rgba(0,0,0,0.18)");
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+      hctx.fillStyle = gradient;
       hctx.beginPath();
       hctx.arc(x, y, radius, 0, Math.PI * 2);
       hctx.fill();
     }
 
-    const img = hctx.getImageData(0, 0, frameWidth, frameHeight);
-    const d = img.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const a = d[i + 3] / 255;
-      if (a === 0) continue;
-      const t = Math.min(1, a * 3);
+    const image = hctx.getImageData(0, 0, frameWidth, frameHeight);
+    const data = image.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3] / 255;
+      if (alpha === 0) continue;
+      const t = Math.min(1, alpha * 3);
       const [r, g, b] = ramp(t);
-      d[i] = r;
-      d[i + 1] = g;
-      d[i + 2] = b;
-      d[i + 3] = Math.min(255, a * 560);
+      data[i] = r;
+      data[i + 1] = g;
+      data[i + 2] = b;
+      data[i + 3] = Math.min(255, alpha * 560);
     }
-    hctx.putImageData(img, 0, 0);
+    hctx.putImageData(image, 0, 0);
     ctx.drawImage(heat, 0, 0);
-  }, [filtered, frameWidth, frameHeight]);
+  }, [points, frameWidth, frameHeight, kind]);
+
+  if (points.length === 0) {
+    return (
+      <p className="border border-dashed border-white/10 px-4 py-16 text-center text-white/40">
+        No {kind === "hover" ? "hover" : "click"} data for these filters yet.
+      </p>
+    );
+  }
 
   return (
     <div>
-      {/* Toolbar */}
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="flex gap-px overflow-hidden rounded border border-white/12">
-          {(["all", "desktop", "mobile"] as Device[]).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDevice(d)}
-              className={`px-4 py-2 text-sm font-semibold capitalize transition-colors ${
-                device === d ? "bg-accent text-white" : "bg-white/[0.03] text-white/60 hover:text-white"
-              }`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <label className="flex cursor-pointer items-center gap-2 text-sm text-white/60 select-none">
           <input
             type="checkbox"
@@ -149,85 +151,78 @@ export function ClickMap({
           />
           Show page
         </label>
-
-        <span className="ml-auto text-sm text-white/45">
-          {filtered.length.toLocaleString("en-IN")} clicks
+        <span className="text-sm text-white/45">
+          {points.length.toLocaleString("en-IN")}{" "}
+          {kind === "hover" ? "hover samples" : "clicks"}
         </span>
       </div>
 
-      {filtered.length === 0 ? (
-        <p className="border border-white/10 px-4 py-16 text-center text-white/40">
-          No clicks recorded yet. As visitors interact with the page, their taps
-          appear here.
-        </p>
-      ) : (
-        <div ref={wrapRef} className="w-full overflow-hidden">
+      <div ref={wrapRef} className="w-full overflow-hidden">
+        <div
+          className="relative mx-auto"
+          style={{ width: frameWidth * scale, height: frameHeight * scale }}
+        >
           <div
-            className="relative mx-auto"
+            className="absolute top-0 left-0 origin-top-left"
             style={{
-              width: frameWidth * scale,
-              height: frameHeight * scale,
+              width: frameWidth,
+              height: frameHeight,
+              transform: `scale(${scale})`,
             }}
           >
-            <div
-              className="absolute top-0 left-0 origin-top-left"
+            {/* `preview=1` is a hint for anything that wants to know; the
+                tracker's real guard is that it refuses to run in an iframe. */}
+            <iframe
+              ref={iframeRef}
+              src={`${path}${path.includes("?") ? "&" : "?"}preview=1`}
+              title="Site preview"
+              onLoad={onFrameLoad}
+              scrolling="no"
+              tabIndex={-1}
               style={{
                 width: frameWidth,
                 height: frameHeight,
-                transform: `scale(${scale})`,
+                border: 0,
+                pointerEvents: "none",
+                opacity: showPage ? 1 : 0,
               }}
-            >
-              {/* Live site preview */}
-              <iframe
-                ref={iframeRef}
-                src="/?preview=1"
-                title="Site preview"
-                onLoad={onFrameLoad}
-                scrolling="no"
-                tabIndex={-1}
-                style={{
-                  width: frameWidth,
-                  height: frameHeight,
-                  border: 0,
-                  pointerEvents: "none",
-                  opacity: showPage ? 1 : 0,
-                }}
-              />
-              {/* Dim so heat reads on top */}
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: showPage ? "rgba(9,16,28,0.55)" : "#0e1626" }}
+            />
+            {markers.map((marker) => (
               <div
-                className="pointer-events-none absolute inset-0"
-                style={{ background: showPage ? "rgba(9,16,28,0.55)" : "#0e1626" }}
-              />
-              {/* Section guide lines */}
-              {markers.map((m) => (
-                <div
-                  key={m.label}
-                  className="pointer-events-none absolute inset-x-0"
-                  style={{ top: (m.y / 1000) * frameHeight }}
-                >
-                  <span className="block border-t border-dashed border-white/25" />
-                  <span className="absolute left-2 -translate-y-1/2 bg-[#0e1626] px-1.5 text-[0.65rem] tracking-wide text-white/60 uppercase">
-                    {SECTION_LABELS[m.label] ?? m.label}
-                  </span>
-                </div>
-              ))}
-              {/* Heat */}
-              <canvas
-                ref={canvasRef}
-                width={frameWidth}
-                height={frameHeight}
-                className="pointer-events-none absolute inset-0"
-              />
-            </div>
+                key={marker.label}
+                className="pointer-events-none absolute inset-x-0"
+                style={{ top: (marker.y / 1000) * frameHeight }}
+              >
+                <span className="block border-t border-dashed border-white/25" />
+                <span className="absolute left-2 -translate-y-1/2 bg-[#0e1626] px-1.5 text-[0.65rem] tracking-wide text-white/60 uppercase">
+                  {SECTION_LABELS[marker.label] ?? marker.label}
+                </span>
+              </div>
+            ))}
+            <canvas
+              ref={canvasRef}
+              width={frameWidth}
+              height={frameHeight}
+              className="pointer-events-none absolute inset-0"
+            />
           </div>
         </div>
-      )}
+      </div>
 
-      <Legend />
+      <div className="mt-5 flex items-center gap-3 text-xs text-white/45">
+        <span>Fewer</span>
+        <span className="h-2.5 w-40 rounded-full bg-[linear-gradient(to_right,rgb(30,90,200),rgb(30,200,180),rgb(120,220,60),rgb(240,210,40),rgb(230,60,30))]" />
+        <span>More</span>
+      </div>
     </div>
   );
 }
 
+/** Blue → teal → green → yellow → red, interpolated. */
 function ramp(t: number): [number, number, number] {
   const stops: [number, [number, number, number]][] = [
     [0.0, [30, 90, 200]],
@@ -249,14 +244,4 @@ function ramp(t: number): [number, number, number] {
     }
   }
   return stops[stops.length - 1][1];
-}
-
-function Legend() {
-  return (
-    <div className="mt-5 flex items-center gap-3 text-xs text-white/45">
-      <span>Fewer clicks</span>
-      <span className="h-2.5 w-40 rounded-full bg-[linear-gradient(to_right,rgb(30,90,200),rgb(30,200,180),rgb(120,220,60),rgb(240,210,40),rgb(230,60,30))]" />
-      <span>More clicks</span>
-    </div>
-  );
 }

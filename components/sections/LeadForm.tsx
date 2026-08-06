@@ -56,6 +56,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
       </p>
 
       <form
+        data-form-id="hero-price-sheet"
         noValidate
         onSubmit={(e) => {
           e.preventDefault();

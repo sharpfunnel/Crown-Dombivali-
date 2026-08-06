@@ -51,6 +51,7 @@ export function SiteVisitForm() {
       </p>
 
       <form
+        data-form-id="site-visit"
         noValidate
         onSubmit={(e) => {
           e.preventDefault();

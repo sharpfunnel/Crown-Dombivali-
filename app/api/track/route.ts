@@ -30,6 +30,74 @@ function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
+/**
+ * Every event type the collectors can produce. An allowlist rather than a
+ * passthrough: `type` is grouped and filtered on by every dashboard query, so
+ * an arbitrary string posted here would show up as a permanent junk row on the
+ * CTA and forms pages with no way to remove it from the UI.
+ */
+const EVENT_TYPES = new Set([
+  "pageview",
+  "time",
+  "scroll",
+  "section_view",
+  "click",
+  "cta_view",
+  "cta_hover",
+  "cta_click",
+  "form_view",
+  "form_start",
+  "field_focus",
+  "field_complete",
+  "validation_error",
+  "form_submit",
+  "form_abandon",
+  "rage_click",
+  "dead_click",
+  "dbl_click",
+  "hover",
+  "vital",
+  "error",
+]);
+
+const MAX_EVENTS_PER_BATCH = 60;
+const MAX_META_KEYS = 12;
+
+/**
+ * Trim each event to the shape the tables expect. `meta` in particular now
+ * carries free text (error messages, CSS selectors, element labels), so both
+ * its width and its depth are bounded before it reaches a JSONB column.
+ */
+function cleanEvents(raw: unknown): TrackEvent[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TrackEvent[] = [];
+  for (const e of raw.slice(0, MAX_EVENTS_PER_BATCH)) {
+    if (!e || typeof e !== "object") continue;
+    const ev = e as Record<string, unknown>;
+    const type = typeof ev.type === "string" ? ev.type : "";
+    if (!EVENT_TYPES.has(type)) continue;
+
+    let meta: Record<string, unknown> | null = null;
+    if (ev.meta && typeof ev.meta === "object" && !Array.isArray(ev.meta)) {
+      meta = {};
+      for (const [k, v] of Object.entries(ev.meta).slice(0, MAX_META_KEYS)) {
+        if (typeof v === "string") meta[k.slice(0, 40)] = v.slice(0, 300);
+        else if (typeof v === "number" && Number.isFinite(v)) meta[k.slice(0, 40)] = v;
+        else if (typeof v === "boolean" || v === null) meta[k.slice(0, 40)] = v;
+      }
+    }
+
+    out.push({
+      type,
+      path: str(ev.path, 300),
+      label: str(ev.label, 240),
+      value: num(ev.value),
+      meta: meta && Object.keys(meta).length ? meta : null,
+    });
+  }
+  return out;
+}
+
 export async function POST(request: Request) {
   let body: {
     context?: {
@@ -46,6 +114,12 @@ export async function POST(request: Request) {
       adset_id?: string | null;
       ad_id?: string | null;
       rawParams?: Record<string, string>;
+      deviceScreenW?: number;
+      deviceScreenH?: number;
+      language?: string;
+      timezone?: string;
+      network?: string;
+      downlink?: number;
     };
     events?: TrackEvent[];
   };
@@ -115,9 +189,17 @@ export async function POST(request: Request) {
     userAgent: str(ua, 400),
     device: parsed.device,
     browser: parsed.browser,
+    browserVersion: parsed.browserVersion,
     os: parsed.os,
-    screenW: num(body.context?.screenW),
-    screenH: num(body.context?.screenH),
+    osVersion: parsed.osVersion,
+    screenW: num(c.screenW),
+    screenH: num(c.screenH),
+    deviceScreenW: num(c.deviceScreenW),
+    deviceScreenH: num(c.deviceScreenH),
+    language: str(c.language, 20),
+    timezone: str(c.timezone, 60),
+    network: str(c.network, 20),
+    downlink: num(c.downlink),
     // First-party Meta cookies the pixel writes on our domain — the strongest
     // CAPI match signals. Read straight off the request.
     fbc: str(cookies["_fbc"], 255),
@@ -140,7 +222,7 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 204 });
   }
 
-  const events = Array.isArray(body.events) ? body.events.slice(0, 50) : [];
+  const events = cleanEvents(body.events);
 
   try {
     await ensureAnalyticsSchema();

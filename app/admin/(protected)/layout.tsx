@@ -1,10 +1,21 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/auth";
 import { LogoutButton } from "@/components/admin/LogoutButton";
+import { AdminNav } from "@/components/admin/ui/AdminNav";
+import { getNavCounts } from "@/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The single auth check for the whole panel.
+ *
+ * Every admin route lives inside this route group, so one verification here
+ * protects all of them — no per-page auth code and no middleware. The trade-off
+ * is worth naming: a new top-level admin route created OUTSIDE `(protected)`
+ * would be public, because there is no edge-level backstop.
+ */
 export default async function ProtectedAdminLayout({
   children,
 }: {
@@ -15,6 +26,8 @@ export default async function ProtectedAdminLayout({
   if (!verifySessionToken(store.get(ADMIN_COOKIE)?.value)) {
     redirect("/admin/login");
   }
+
+  const navCounts = await getNavCounts();
 
   return (
     <div className="min-h-screen bg-[#0b1220] text-white">
@@ -36,7 +49,14 @@ export default async function ProtectedAdminLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-5 py-8">
+        {/* AdminNav reads the query string to keep the date range across
+            navigations; Suspense keeps that out of the render path above it. */}
+        <Suspense fallback={<div className="mb-8 h-12 border-b border-white/10" />}>
+          <AdminNav counts={navCounts} />
+        </Suspense>
+        {children}
+      </main>
     </div>
   );
 }
