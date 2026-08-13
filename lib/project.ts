@@ -49,7 +49,7 @@ export const hero = {
   subheading:
     "Premium 1, 2, 3 & 4 BHK Homes, Villas, Bungalows & Duplexes — Starting at ₹39.99 Lakhs*",
   badges: [
-    "17 Acre Township",
+    "100 Acre Township",
     "Metro at Your Doorstep",
     "Starting ₹39.99 Lakhs*",
     "For NRIs & Mumbai Homebuyers",
@@ -64,13 +64,13 @@ export const hero = {
 
 export const about = {
   heading: "Experience Comfortable Modern Living",
-  body: "Lodha Crown Dombivli is a thoughtfully planned residential township spread across 17 acres in the heart of the Mumbai metropolitan region, offering premium 1, 2, 3 & 4 BHK homes along with villas, bungalows and duplex residences. Designed for modern Mumbai families and NRI investors alike, Lodha Crown combines excellent connectivity, quality construction, green open spaces, world-class amenities and everyday convenience in one destination.",
+  body: "Lodha Crown Dombivli is a thoughtfully planned residential township spread across 100 acres in the heart of the Mumbai metropolitan region, offering premium 1, 2, 3 & 4 BHK homes along with villas, bungalows and duplex residences. Designed for modern Mumbai families and NRI investors alike, Lodha Crown combines excellent connectivity, quality construction, green open spaces, world-class amenities and everyday convenience in one destination.",
 } as const;
 
 export type Highlight = { title: string; icon: IconName };
 
 export const projectHighlights: Highlight[] = [
-  { title: "17-Acre Residential Township", icon: "township" },
+  { title: "100-Acre Residential Township", icon: "township" },
   { title: "1, 2, 3 & 4 BHK, Villas & Duplexes", icon: "home" },
   { title: "Metro Connectivity", icon: "metro" },
   { title: "Clubhouse", icon: "clubhouse" },
