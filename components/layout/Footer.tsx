@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PreferredPartnerLogo } from "@/components/layout/PreferredPartnerLogo";
 import { Reveal } from "@/components/motion/Reveal";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
 import { disclaimer, project } from "@/lib/project";
@@ -39,6 +40,13 @@ export function Footer() {
       <div className="shell relative">
         <Reveal className="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div>
+            {/* The supplied lockup is the light-background variant, so it goes in a
+                white box here — the footer is dark navy. 80px tall = the policy's
+                minimum logo-unit size. */}
+            <div className="mb-6 inline-flex bg-white px-4 py-3">
+              <PreferredPartnerLogo className="h-20" />
+            </div>
+
             <p className="text-2xl font-bold tracking-tight text-paper uppercase">
               {project.name}
               <span className="text-accent">.</span>
