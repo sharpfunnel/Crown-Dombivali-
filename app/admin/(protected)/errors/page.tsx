@@ -18,6 +18,7 @@ const KIND_LABELS: Record<string, string> = {
   js: "JS error",
   promise: "Unhandled rejection",
   image: "Broken image",
+  lead_submit: "Lead submit failed",
 };
 
 export default async function ErrorsPage({

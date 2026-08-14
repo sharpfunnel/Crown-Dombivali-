@@ -1,6 +1,6 @@
 "use client";
 
-import { currentPath, push } from "@/lib/track/client/queue";
+import { currentPath, flush, push } from "@/lib/track/client/queue";
 
 /**
  * Client-side failures the operator would otherwise never hear about: JS
@@ -28,6 +28,29 @@ function firstLine(input: unknown): string {
             }
           })();
   return text.split("\n")[0].slice(0, 240);
+}
+
+/**
+ * Manual report for a failure caught in application code rather than by the
+ * window-level listeners below — e.g. a lead submission whose `fetch` threw or
+ * came back non-2xx. Without this, that kind of failure was only ever
+ * `console.error`'d: invisible the moment the visitor's console isn't open,
+ * which is every visitor. Flushed immediately (not on the usual 5s/20-event
+ * batching) since a failed submission is often followed by the visitor giving
+ * up and closing the tab.
+ */
+export function trackError(
+  kind: string,
+  error: unknown,
+  meta: Record<string, unknown> = {},
+): void {
+  push({
+    type: "error",
+    label: firstLine(error),
+    path: currentPath(),
+    meta: { kind, ...meta },
+  });
+  flush(true);
 }
 
 export function initErrors(): () => void {

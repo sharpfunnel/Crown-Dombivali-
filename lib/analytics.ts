@@ -198,6 +198,20 @@ async function buildSchema() {
      correlated scan over the events table on every dashboard hit. */
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS interactions INT NOT NULL DEFAULT 0`;
 
+  /* Raw click/move counters plus the form funnel's two edges, rolled up on the
+     row for the Sessions table. mouse_moves is a MAX of a client-reported
+     running total (like duration_ms), the same way a laggy/out-of-order batch
+     still converges on the right number; mouse_clicks is a plain sum, one
+     per real click. scroll_sum/scroll_samples is the running mean of every
+     scroll-depth milestone reached, so "Avg Scroll %" is a real average and
+     not a guess. */
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mouse_clicks INT NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mouse_moves INT NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS form_started BOOLEAN NOT NULL DEFAULT false`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS form_submitted BOOLEAN NOT NULL DEFAULT false`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS scroll_sum INT NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS scroll_samples INT NOT NULL DEFAULT 0`;
+
   /* Bounce lives in the schema, not in each dashboard query, so every page
      agrees on what it means. A generated column recomputes on every write to
      the row, so a visit stops being a bounce the moment it scrolls, clicks or
@@ -337,9 +351,9 @@ export async function recordEvents(
   // Roll up session aggregates from the batch.
   const pageViews = events.filter((e) => e.type === "pageview").length;
   const ctaClicks = events.filter((e) => e.type === "cta_click").length;
-  const maxScroll = events
-    .filter((e) => e.type === "scroll")
-    .reduce((m, e) => Math.max(m, e.value ?? 0), 0);
+  const scrollEvents = events.filter((e) => e.type === "scroll");
+  const maxScroll = scrollEvents.reduce((m, e) => Math.max(m, e.value ?? 0), 0);
+  const scrollSum = scrollEvents.reduce((s, e) => s + (e.value ?? 0), 0);
   const duration = events
     .filter((e) => e.type === "time")
     .reduce((m, e) => Math.max(m, e.value ?? 0), 0);
@@ -348,6 +362,15 @@ export async function recordEvents(
   const interactions = events.filter((e) =>
     ENGAGEMENT_TYPES.has(e.type),
   ).length;
+  // Raw click count (one event per real click) and the mousemove counter,
+  // reported the same way `time` is — a running total, taken as a MAX so an
+  // out-of-order batch can't push it backwards.
+  const mouseClicks = events.filter((e) => e.type === "click").length;
+  const mouseMoves = events
+    .filter((e) => e.type === "move_count")
+    .reduce((m, e) => Math.max(m, e.value ?? 0), 0);
+  const formStarted = events.some((e) => e.type === "form_start");
+  const formSubmitted = events.some((e) => e.type === "form_submit");
   // Last page seen in this batch — batches arrive in order, so the final
   // pageview of the final batch ends up as the session's exit page.
   const lastPath =
@@ -355,13 +378,19 @@ export async function recordEvents(
 
   await sql`
     UPDATE sessions SET
-      last_event_at = now(),
-      page_views   = page_views + ${pageViews},
-      cta_clicks   = cta_clicks + ${ctaClicks},
-      interactions = interactions + ${interactions},
-      max_scroll   = GREATEST(max_scroll, ${maxScroll}),
-      duration_ms  = GREATEST(duration_ms, ${duration}),
-      exit_path    = COALESCE(${lastPath}, exit_path)
+      last_event_at  = now(),
+      page_views     = page_views + ${pageViews},
+      cta_clicks     = cta_clicks + ${ctaClicks},
+      interactions   = interactions + ${interactions},
+      mouse_clicks   = mouse_clicks + ${mouseClicks},
+      mouse_moves    = GREATEST(mouse_moves, ${mouseMoves}),
+      form_started   = form_started OR ${formStarted},
+      form_submitted = form_submitted OR ${formSubmitted},
+      scroll_sum     = scroll_sum + ${scrollSum},
+      scroll_samples = scroll_samples + ${scrollEvents.length},
+      max_scroll     = GREATEST(max_scroll, ${maxScroll}),
+      duration_ms    = GREATEST(duration_ms, ${duration}),
+      exit_path      = COALESCE(${lastPath}, exit_path)
     WHERE id = ${sessionId}
   `;
 }
