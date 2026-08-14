@@ -41,6 +41,17 @@ export const metadata: Metadata = {
     "New Launch Flats Dombivli",
   ],
   alternates: { canonical: "/" },
+  /* Icons live in /public (favicon.io bundle), so they are declared here rather
+     than picked up by the app/ file conventions. */
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
     locale: "en_IN",
