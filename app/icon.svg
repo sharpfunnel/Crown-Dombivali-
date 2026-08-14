@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Crown Dombivli">
+  <!-- Site palette from globals.css: ink #0b3a73, accent #ee6123. Sharp-edged to
+       match the design system (--radius-card: 0). The Lodha mark is deliberately
+       not used here — the CP policy reserves it to the Preferred Partner lockup. -->
+  <rect width="64" height="64" fill="#0b3a73"/>
+  <path d="M41.19 17.81 A13 13 0 1 0 41.19 36.19"
+        fill="none" stroke="#ffffff" stroke-width="7"/>
+  <rect x="17" y="49" width="30" height="6" fill="#ee6123"/>
+</svg>
