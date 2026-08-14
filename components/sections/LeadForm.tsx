@@ -27,7 +27,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
       <p className="text-lg font-bold text-white">Get Instant Price Sheet</p>
       <p className="mt-1.5 text-sm text-white/55">
         Share your name and number — we&apos;ll call you with pricing, floor
-        plans and the brochure right away.
+        plans and availability right away.
       </p>
 
       <form
