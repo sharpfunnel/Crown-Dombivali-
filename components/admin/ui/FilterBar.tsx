@@ -70,6 +70,7 @@ export function FilterBar({
 
       {search && (
         <form
+          className="w-full sm:w-auto"
           onSubmit={(e) => {
             e.preventDefault();
             go({ [search.name]: query.trim() || null });
@@ -80,7 +81,7 @@ export function FilterBar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={search.placeholder}
-            className="w-56 border border-white/12 bg-white/[0.03] px-3 py-1.5 text-xs text-white placeholder:text-white/30 focus:border-accent focus:outline-none"
+            className="w-full border border-white/12 bg-white/[0.03] px-3 py-1.5 text-xs text-white placeholder:text-white/30 focus:border-accent focus:outline-none sm:w-56"
           />
         </form>
       )}

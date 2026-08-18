@@ -49,7 +49,7 @@ export function AdminNav({ counts }: { counts: NavCounts }) {
   const current = counts[String(days)] ?? { leads: 0, sessions: 0 };
 
   return (
-    <nav className="mb-8 flex flex-wrap gap-1.5 border-b border-white/10 pb-4">
+    <nav className="-mx-4 mb-8 flex gap-1.5 overflow-x-auto border-b border-white/10 px-4 pb-4 sm:mx-0 sm:flex-wrap sm:px-0">
       {LINKS.map((link) => {
         // Every route starts with /admin, so only an exact match keeps Overview
         // from lighting up on every page.
@@ -69,7 +69,7 @@ export function AdminNav({ counts }: { counts: NavCounts }) {
             key={link.href}
             href={`${link.href}?days=${days}`}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-2 px-3.5 py-2 text-sm font-semibold transition-colors ${
+            className={`flex shrink-0 items-center gap-2 px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
               active
                 ? "bg-accent text-white"
                 : "text-white/50 hover:bg-white/5 hover:text-white/85"
