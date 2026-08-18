@@ -4,7 +4,7 @@ import { LegalPage } from "@/components/layout/LegalPage";
 export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
-    "Terms governing use of the Lodha Crown Dombivli Manpada website and the information published on it.",
+    "Terms governing use of the Lodha Premier Dombivli Manpada website and the information published on it.",
 };
 
 export default function TermsPage() {
@@ -16,7 +16,7 @@ export default function TermsPage() {
         {
           heading: "Use of this website",
           body: [
-            "By accessing this website you agree to these terms. The content published here is for general information about Lodha Crown Dombivli Manpada and does not constitute an offer, invitation or contract of any kind.",
+            "By accessing this website you agree to these terms. The content published here is for general information about Lodha Premier Dombivli Manpada and does not constitute an offer, invitation or contract of any kind.",
           ],
         },
         {

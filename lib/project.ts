@@ -1,5 +1,5 @@
 /**
- * Single source of truth for the Lodha Crown Dombivli Manpada landing page.
+ * Single source of truth for the Lodha Premier Dombivli Manpada landing page.
  * Copy is taken from the client requirements document.
  *
  * TODO(client): the phone/WhatsApp numbers, project address and RERA number
@@ -7,13 +7,13 @@
  */
 
 export const project = {
-  name: "Lodha Crown Dombivli",
-  brand: "Crown Quality Homes",
-  fullName: "Lodha Crown Dombivli Manpada",
+  name: "Lodha Premier Dombivli",
+  brand: "Premier Quality Homes",
+  fullName: "Lodha Premier Dombivli Manpada",
   locality: "Manpada, Dombivli East",
   /* From the project brochure. */
   address:
-    "Lodha Crown Dombivli gallery, Premier Colony Ground, on Kalyan-Shil Road, Dombivli 421 203",
+    "Lodha Premier Dombivli gallery, Premier Colony Ground, on Kalyan-Shil Road, Dombivli 421 203",
   corporateOffice:
     "One Lodha Place, near Lodha World Towers, Senapati Bapat Marg, Mumbai 400 013",
   reraNumbers: ["P51700048779", "P51700049154"],
@@ -32,12 +32,11 @@ export const project = {
   whatsappHref:
     "https://wa.me/918451047710?text=" +
     encodeURIComponent(
-      "Hi, I'm interested in Lodha Crown Dombivli. Please share the price sheet and brochure.",
+      "Hi, I'm interested in Lodha Premier Dombivli. Please share the price sheet and floor plans.",
     ),
   /** Label used on WhatsApp CTAs across the site. */
   whatsappCta: "Chat on WhatsApp: +91 84510 47710",
   email: "sales@crowndombivli.com",
-  brochureHref: "/crown-dombivli-brochure.pdf",
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -45,13 +44,13 @@ export const project = {
 /* -------------------------------------------------------------------------- */
 
 export const hero = {
-  heading: "Your Dream Home Awaits at Lodha Crown Dombivli, Mumbai.",
+  heading: "Your Dream Home Awaits at Lodha Premier Dombivli, Mumbai.",
   subheading:
-    "Premium 1, 2, 3 & 4 BHK Homes, Villas, Bungalows & Duplexes — Starting at ₹39.99 Lakhs*",
+    "Premium 1, 2, 3 & 4 BHK Homes, Villas, Bungalows & Duplexes — Starting at ₹54 Lakhs++",
   badges: [
     "100 Acre Township",
     "Metro at Your Doorstep",
-    "Starting ₹39.99 Lakhs*",
+    "Starting ₹54 Lakhs++",
     "For NRIs & Mumbai Homebuyers",
     "Possession Starting This Year-End",
     "World-Class Amenities",
@@ -64,7 +63,7 @@ export const hero = {
 
 export const about = {
   heading: "Experience Comfortable Modern Living",
-  body: "Lodha Crown Dombivli is a thoughtfully planned residential township spread across 100 acres in the heart of the Mumbai metropolitan region, offering premium 1, 2, 3 & 4 BHK homes along with villas, bungalows and duplex residences. Designed for modern Mumbai families and NRI investors alike, Lodha Crown combines excellent connectivity, quality construction, green open spaces, world-class amenities and everyday convenience in one destination.",
+  body: "Lodha Premier Dombivli is a thoughtfully planned residential township spread across 100 acres in the heart of the Mumbai metropolitan region, offering premium 1, 2, 3 & 4 BHK homes along with villas, bungalows and duplex residences. Designed for modern Mumbai families and NRI investors alike, Lodha Premier combines excellent connectivity, quality construction, green open spaces, world-class amenities and everyday convenience in one destination.",
 } as const;
 
 export type Highlight = { title: string; icon: IconName };
@@ -106,9 +105,9 @@ export const configurations: Configuration[] = [
   {
     id: "1bhk",
     type: "1 BHK",
-    carpetArea: "322 sq. ft.",
-    price: "₹39.99 Lakhs",
-    priceNote: "+ Taxes",
+    carpetArea: "444 sq. ft.",
+    price: "₹54 Lakhs",
+    priceNote: "++ Taxes & Charges",
     plan: "Typical Unit Plan — Ruby D, E & F",
     rooms: [
       { name: "Living Room", size: "10'0\" × 11'3\"" },
@@ -139,7 +138,7 @@ export const configurations: Configuration[] = [
 ];
 
 /**
- * The full range of homes at Lodha Crown Dombivli. 1 & 2 BHK carry confirmed starting
+ * The full range of homes at Lodha Premier Dombivli. 1 & 2 BHK carry confirmed starting
  * prices; the larger and premium formats are priced on request.
  *
  * TODO(client): add confirmed starting prices for 3/4 BHK, villas, bungalows
@@ -153,7 +152,7 @@ export type PropertyType = {
 };
 
 export const propertyTypes: PropertyType[] = [
-  { type: "1 BHK", summary: "Compact, efficient homes", price: "₹39.99 Lakhs", priceNote: "onwards*" },
+  { type: "1 BHK", summary: "Compact, efficient homes", price: "₹54 Lakhs", priceNote: "++ onwards*" },
   { type: "2 BHK", summary: "Spacious family homes", price: "₹59.99 Lakhs", priceNote: "onwards*" },
   { type: "3 BHK", summary: "Premium larger residences", price: "Price on request", priceNote: "" },
   { type: "4 BHK", summary: "Expansive luxury homes", price: "Price on request", priceNote: "" },
@@ -165,10 +164,10 @@ export const propertyTypes: PropertyType[] = [
 /** Options for the "Property Preference" dropdown in the enquiry forms. */
 export const propertyPreferences = ["1 BHK", "2 BHK", "3 BHK", "4 BHK"];
 
-export const startingPrice = "₹39.99 Lakhs";
+export const startingPrice = "₹54 Lakhs";
 
 export const pricingNote =
-  "All homes start at ₹39.99 Lakhs*. Prices are negotiable; taxes and other charges are extra.";
+  "All homes start at ₹54 Lakhs++*. Prices are negotiable; taxes and other charges are extra.";
 
 export const bookingDetails = [
   {
@@ -515,10 +514,10 @@ export const gallery: GalleryItem[] = [
 /* -------------------------------------------------------------------------- */
 
 export const budgetOptions = [
-  "Under ₹40 Lakhs",
-  "₹40 – ₹50 Lakhs",
-  "₹50 – ₹60 Lakhs",
-  "₹60 Lakhs and above",
+  "Under ₹55 Lakhs",
+  "₹55 – ₹65 Lakhs",
+  "₹65 – ₹80 Lakhs",
+  "₹80 Lakhs and above",
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -529,12 +528,12 @@ export const faqs = [
   {
     question: "What configurations are available?",
     answer:
-      "Lodha Crown Dombivli offers premium 1, 2, 3 & 4 BHK apartments along with villas, bungalows and duplex homes. The 1 BHK has a carpet area of 322 sq. ft. and the 2 BHK is 487 sq. ft.; larger formats are available on request. Request the price sheet for the full unit-wise breakdown.",
+      "Lodha Premier Dombivli offers premium 1, 2, 3 & 4 BHK apartments along with villas, bungalows and duplex homes. The 1 BHK has a carpet area of 444 sq. ft. and the 2 BHK is 487 sq. ft.; larger formats are available on request. Request the price sheet for the full unit-wise breakdown.",
   },
   {
     question: "What is the starting price?",
     answer:
-      "Homes at Lodha Crown Dombivli start at ₹39.99 Lakhs + taxes for a 1 BHK, and ₹59.99 Lakhs + taxes for a 2 BHK. Pricing for 3 & 4 BHK, villas, bungalows and duplexes is shared on request. Taxes, government charges, registration and other applicable costs are extra.",
+      "Homes at Lodha Premier Dombivli start at ₹54 Lakhs++ for a 1 BHK, and ₹59.99 Lakhs + taxes for a 2 BHK. Pricing for 3 & 4 BHK, villas, bungalows and duplexes is shared on request. Taxes, government charges, registration and other applicable costs are extra.",
   },
   {
     question: "Are prices negotiable?",

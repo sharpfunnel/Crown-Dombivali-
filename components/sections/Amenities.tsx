@@ -113,7 +113,7 @@ export function Clubhouse() {
           <div className="grain relative aspect-4/5 overflow-hidden">
             <Image
               src="/images/render-clubhouse.jpg"
-              alt="The newly opened clubhouse at Lodha Crown Dombivli Manpada"
+              alt="The newly opened clubhouse at Lodha Premier Dombivli Manpada"
               fill
               sizes="(max-width: 1024px) 100vw, 48vw"
               className="object-cover"
@@ -139,7 +139,7 @@ export function Temple() {
       <div className="grain relative min-h-[30rem] py-24 lg:min-h-[36rem] lg:py-32">
         <Image
           src="/images/render-gardens.jpg"
-          alt="Landscaped grounds and walkways within the Lodha Crown Dombivli Manpada township"
+          alt="Landscaped grounds and walkways within the Lodha Premier Dombivli Manpada township"
           fill
           sizes="100vw"
           className="object-cover"

@@ -5,7 +5,7 @@ import { disclaimer } from "@/lib/project";
 export const metadata: Metadata = {
   title: "Disclaimer",
   description:
-    "Disclaimer covering pricing, images, specifications, amenities, floor plans and availability shown for Lodha Crown Dombivli Manpada.",
+    "Disclaimer covering pricing, images, specifications, amenities, floor plans and availability shown for Lodha Premier Dombivli Manpada.",
 };
 
 export default function DisclaimerPage() {

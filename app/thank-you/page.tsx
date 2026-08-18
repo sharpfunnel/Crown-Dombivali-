@@ -43,7 +43,7 @@ export default async function ThankYouPage({
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-white/60">
             We&apos;ve received your details. Our team will call you shortly with
-            the price sheet, floor plans and brochure for {project.name}.
+            the price sheet, floor plans and availability for {project.name}.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">

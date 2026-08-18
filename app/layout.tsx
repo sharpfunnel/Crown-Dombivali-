@@ -19,16 +19,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://crowndombivli.com"),
   title: {
-    default: "Lodha Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
-    template: "%s · Lodha Crown Dombivli",
+    default: "Lodha Premier Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
+    template: "%s · Lodha Premier Dombivli",
   },
   description:
-    "Book your dream home at Lodha Crown Dombivli, Mumbai. Premium 1, 2, 3 & 4 BHK apartments, villas, bungalows and duplexes from ₹39.99 Lakhs — for NRIs and Mumbai homebuyers, with metro connectivity, clubhouse and world-class amenities.",
+    "Book your dream home at Lodha Premier Dombivli, Mumbai. Premium 1, 2, 3 & 4 BHK apartments, villas, bungalows and duplexes from ₹54 Lakhs++ — for NRIs and Mumbai homebuyers, with metro connectivity, clubhouse and world-class amenities.",
   keywords: [
-    "Lodha Crown Dombivli",
-    "Lodha Crown Dombivli Mumbai",
-    "Lodha Crown Dombivli Manpada",
-    "Crown Manpada",
+    "Lodha Premier Dombivli",
+    "Lodha Premier Dombivli Mumbai",
+    "Lodha Premier Dombivli Manpada",
+    "Premier Manpada",
     "1 BHK in Dombivli",
     "2 BHK Flats in Dombivli",
     "3 BHK in Dombivli",
@@ -55,10 +55,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: "Lodha Crown Dombivli",
-    title: "Lodha Crown Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
+    siteName: "Lodha Premier Dombivli",
+    title: "Lodha Premier Dombivli, Mumbai | 1, 2, 3 & 4 BHK, Villas & Duplexes",
     description:
-      "Premium 1, 2, 3 & 4 BHK homes, villas and duplexes from ₹39.99 Lakhs — for NRIs and Mumbai homebuyers, with metro connectivity and world-class amenities.",
+      "Premium 1, 2, 3 & 4 BHK homes, villas and duplexes from ₹54 Lakhs++ — for NRIs and Mumbai homebuyers, with metro connectivity and world-class amenities.",
     images: ["/images/crown-township-render.jpg"],
   },
   twitter: { card: "summary_large_image" },

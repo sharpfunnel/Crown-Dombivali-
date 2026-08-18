@@ -31,7 +31,7 @@ export function Hero() {
       >
         <Image
           src="/images/crown-township-render.jpg"
-          alt="Aerial render of the Lodha Crown Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
+          alt="Aerial render of the Lodha Premier Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
           fill
           priority
           sizes="100vw"
@@ -120,14 +120,6 @@ export function Hero() {
           >
             <Button href="#lead-form" variant="accent" icon={false} className="px-8">
               Book Free Site Visit
-            </Button>
-            <Button
-              href={project.brochureHref}
-              variant="ghost"
-              download
-              className="px-8"
-            >
-              Download Brochure
             </Button>
           </motion.div>
         </div>

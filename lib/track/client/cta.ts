@@ -31,7 +31,6 @@ function ctaLabel(el: HTMLElement): string | null {
     const href = link.getAttribute("href") || "";
     if (href.startsWith("tel:")) return "Call";
     if (href.includes("wa.me")) return "WhatsApp";
-    if (href.endsWith(".pdf")) return "Download Brochure";
     if (href.includes("#lead-form")) return elementText(link) || "Lead form CTA";
     if (href.includes("#contact")) return elementText(link) || "Contact CTA";
     if (href.startsWith("#")) return elementText(link) || href;
