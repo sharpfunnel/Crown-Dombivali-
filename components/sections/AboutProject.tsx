@@ -15,7 +15,7 @@ export function AboutProject() {
             <div className="grain relative aspect-4/3 overflow-hidden">
               <Image
                 src="/images/render-elevation.jpg"
-                alt="Lodha Crown Dombivli Manpada township elevation"
+                alt="Lodha Premier Dombivli Manpada township elevation"
                 fill
                 sizes="(max-width: 1024px) 100vw, 48vw"
                 className="object-cover"

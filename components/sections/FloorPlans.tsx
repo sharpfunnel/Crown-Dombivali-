@@ -216,7 +216,7 @@ function PlanOneBhk() {
       viewBox="0 0 420 336"
       className="h-auto w-full"
       role="img"
-      aria-label="1 BHK typical unit plan, 322 square feet carpet area"
+      aria-label="1 BHK typical unit plan, 444 square feet carpet area"
     >
       <rect x="20" y="20" width="380" height="280" {...wall} />
       {/* living room — top left */}

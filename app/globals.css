@@ -5,7 +5,7 @@
    ink #1a1a1a · accent #ff6100 · cream #f2d9c2 · paper #f5f5f5 · muted #454545
 --------------------------------------------------------------------------- */
 @theme {
-  /* Crown brand palette, taken from the project brochure:
+  /* Premier brand palette, taken from the project brochure:
      navy #0b3a73 · orange #ee6123 · white. */
   --color-ink: #0b3a73;
   --color-ink-800: #0e4585;

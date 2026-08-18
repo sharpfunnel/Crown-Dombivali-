@@ -148,7 +148,7 @@ export function Location() {
         {/* --- Why choose --------------------------------------------------- */}
         <div className="mt-20">
           <Reveal>
-            <Eyebrow tone="dark">Why Choose Lodha Crown Dombivli?</Eyebrow>
+            <Eyebrow tone="dark">Why Choose Lodha Premier Dombivli?</Eyebrow>
           </Reveal>
           <TextReveal
             text="Eight reasons families are booking here"

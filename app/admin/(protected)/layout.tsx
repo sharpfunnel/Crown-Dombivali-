@@ -34,7 +34,7 @@ export default async function ProtectedAdminLayout({
       <header className="sticky top-0 z-10 border-b border-white/10 bg-[#0b1220]/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
           <p className="text-lg font-bold whitespace-nowrap">
-            Crown<span className="text-accent">.</span>
+            Premier<span className="text-accent">.</span>
           </p>
           <div className="flex items-center gap-3">
             <a
