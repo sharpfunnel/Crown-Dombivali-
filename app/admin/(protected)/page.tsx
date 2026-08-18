@@ -136,7 +136,7 @@ export default async function OverviewPage({
           <TimeSeriesChart data={series} />
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card title="Conversion funnel" subtitle="All traffic">
             <ConversionFunnel stages={funnel.all} />
           </Card>
@@ -187,7 +187,7 @@ export default async function OverviewPage({
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card title="Devices">
             <DevicesDonut items={devices} />
           </Card>
@@ -209,7 +209,7 @@ export default async function OverviewPage({
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card title="Where visitors are" className="lg:col-span-2">
             <WorldMap countries={countries} />
           </Card>

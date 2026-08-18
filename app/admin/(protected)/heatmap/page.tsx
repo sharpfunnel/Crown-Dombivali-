@@ -81,7 +81,7 @@ export default async function HeatmapPage({
         ]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
           title={`${kind === "hover" ? "Hover" : "Click"} map`}
           subtitle={`${path}${device ? ` · ${device}` : ""}`}

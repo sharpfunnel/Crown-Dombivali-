@@ -27,6 +27,8 @@
 # stray source drop — the canonical copy lives in public/images/
 /new_imgupscaler.ai_Beta_2K.jpg
 
+/temp
+
 # debug
 npm-debug.log*
 yarn-debug.log*

@@ -56,7 +56,7 @@ export default async function FunnelsPage({
           <FunnelView funnel={funnel} />
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card
             title="Scroll depth"
             subtitle="How far down the page visits got"
