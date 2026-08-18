@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         {
           heading: "What we collect",
           body: [
-            "When you submit an enquiry, request the price sheet, download the brochure or book a site visit, we collect the details you provide — typically your name, mobile number, email address, configuration of interest and budget range.",
+            "When you submit an enquiry, request the price sheet or book a site visit, we collect the details you provide — typically your name, mobile number, email address, configuration of interest and budget range.",
             "We also collect basic, aggregated analytics about how this page is used. That data does not identify you personally.",
           ],
         },

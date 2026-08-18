@@ -40,6 +40,26 @@ export function when(iso: string): string {
   });
 }
 
+/** Date only — "06 Aug 2026". */
+export function dateOnly(iso: string): string {
+  return new Date(iso).toLocaleDateString(LOCALE, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: TZ,
+  });
+}
+
+/** Time only — "04:12 pm". */
+export function timeOnly(iso: string): string {
+  return new Date(iso).toLocaleTimeString(LOCALE, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: TZ,
+  });
+}
+
 /** "3m ago" — for anything where recency matters more than the exact instant. */
 export function ago(iso: string): string {
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);

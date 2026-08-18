@@ -26,10 +26,15 @@ const HOVER_THROTTLE_MS = 1500;
 /** Per-visit ceilings — these are diagnostics, not a full mouse trace. */
 const MAX_HOVER_SAMPLES = 120;
 const MAX_FRUSTRATION = 40;
+/** How often the running mousemove tally is reported — same cadence as `time`. */
+const MOVE_REPORT_MS = 15000;
 
 export function initMouse(): () => void {
   let frustration = 0;
   let hoverSamples = 0;
+  // Every real mousemove DOM event, uncapped — cheap to count, expensive to
+  // send one at a time. Reported periodically as a running total instead.
+  let moveCount = 0;
 
   let lastTarget: Element | null = null;
   let streak = 0;
@@ -62,6 +67,9 @@ export function initMouse(): () => void {
   const onClick = (e: MouseEvent) => {
     const target = e.target as Element | null;
     if (!target) return;
+    // One real click, counted regardless of what it hit — the Sessions table's
+    // "Mouse Clicks" column, separate from the frustration signals below.
+    push({ type: "click", path: currentPath() });
     const now = Date.now();
 
     /* ---- rage detection ---- */
@@ -112,6 +120,7 @@ export function initMouse(): () => void {
 
   let lastHover = 0;
   const onMove = (e: MouseEvent) => {
+    moveCount++;
     const now = Date.now();
     if (now - lastHover < HOVER_THROTTLE_MS) return;
     if (hoverSamples >= MAX_HOVER_SAMPLES) return;
@@ -128,9 +137,15 @@ export function initMouse(): () => void {
   document.addEventListener("dblclick", onDoubleClick, true);
   window.addEventListener("mousemove", onMove, { passive: true });
 
+  const moveInterval = window.setInterval(() => {
+    push({ type: "move_count", value: moveCount });
+  }, MOVE_REPORT_MS);
+
   return () => {
     document.removeEventListener("click", onClick, true);
     document.removeEventListener("dblclick", onDoubleClick, true);
     window.removeEventListener("mousemove", onMove);
+    window.clearInterval(moveInterval);
+    push({ type: "move_count", value: moveCount });
   };
 }

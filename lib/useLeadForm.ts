@@ -8,6 +8,7 @@ import {
   trackFormSubmit,
   trackValidationError,
 } from "@/lib/track/client/forms";
+import { trackError } from "@/lib/track/client/errors";
 import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -140,6 +141,10 @@ export function useLeadForm(
       );
     } catch (err) {
       console.error("[lead] submit failed:", err);
+      // Otherwise a failed submission (e.g. inside the Meta in-app browser's
+      // webview) leaves no trace anywhere — the visitor sees "something went
+      // wrong" and the operator never finds out it happened.
+      trackError("lead_submit", err, { source });
       setStatus("error");
     }
   }

@@ -32,12 +32,11 @@ export const project = {
   whatsappHref:
     "https://wa.me/918451047710?text=" +
     encodeURIComponent(
-      "Hi, I'm interested in Lodha Premier Dombivli. Please share the price sheet and brochure.",
+      "Hi, I'm interested in Lodha Premier Dombivli. Please share the price sheet and floor plans.",
     ),
   /** Label used on WhatsApp CTAs across the site. */
   whatsappCta: "Chat on WhatsApp: +91 84510 47710",
   email: "sales@crowndombivli.com",
-  brochureHref: "/crown-dombivli-brochure.pdf",
 } as const;
 
 /* -------------------------------------------------------------------------- */

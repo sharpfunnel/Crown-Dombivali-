@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
+import { PreferredPartnerLogo } from "@/components/layout/PreferredPartnerLogo";
 import { PhoneIcon } from "@/components/sections/SiteVisitBanner";
 import { project } from "@/lib/project";
 
@@ -22,14 +23,13 @@ export function Header() {
       }`}
     >
       <div className="shell flex h-[72px] items-center justify-between gap-4 lg:h-[88px]">
-        <Link href="/" className="min-w-0">
-          <span className="block text-lg leading-none font-bold tracking-tight text-ink uppercase sm:text-xl lg:text-[1.6rem]">
-            {project.name}
-            <span className="text-accent">.</span>
-          </span>
-          <span className="mt-1 block truncate text-[0.65rem] tracking-[0.18em] text-ink/45 uppercase">
-            {project.locality}
-          </span>
+        {/* Lodha Preferred Partner logo unit sits top-left, as the CP policy requires. */}
+        <Link
+          href="/"
+          aria-label={`${project.name} — a Lodha Preferred Partner`}
+          className="shrink-0"
+        >
+          <PreferredPartnerLogo priority className="h-10 sm:h-11 lg:h-14" />
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">

@@ -56,6 +56,7 @@ const EVENT_TYPES = new Set([
   "dead_click",
   "dbl_click",
   "hover",
+  "move_count",
   "vital",
   "error",
 ]);

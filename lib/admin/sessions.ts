@@ -28,13 +28,20 @@ export type SessionFilters = {
 
 export type SessionRow = {
   id: string;
+  visitorId: string;
   startedAt: string;
   lastEventAt: string;
   source: string;
   medium: string;
   campaign: string | null;
+  content: string | null;
+  referrer: string | null;
   city: string | null;
   country: string | null;
+  region: string | null;
+  timezone: string | null;
+  language: string | null;
+  network: string | null;
   device: string | null;
   browser: string | null;
   browserVersion: string | null;
@@ -43,10 +50,19 @@ export type SessionRow = {
   ip: string | null;
   landingPath: string | null;
   exitPath: string | null;
+  screenW: number | null;
+  screenH: number | null;
+  deviceScreenW: number | null;
+  deviceScreenH: number | null;
   pageViews: number;
   maxScroll: number;
+  avgScroll: number;
   ctaClicks: number;
   interactions: number;
+  mouseClicks: number;
+  mouseMoves: number;
+  formStarted: boolean;
+  formSubmitted: boolean;
   durationMs: number;
   converted: boolean;
   isBounce: boolean;
@@ -72,13 +88,20 @@ export async function getSessions(
 
   const [rows, totals] = await Promise.all([
     sql`
-      SELECT s.id, s.started_at, s.last_event_at,
+      SELECT s.id, s.visitor_id, s.started_at, s.last_event_at,
              COALESCE(NULLIF(s.source, ''), 'direct') AS source,
              COALESCE(NULLIF(s.medium, ''), '(none)') AS medium,
-             s.campaign, s.city, s.country, s.device,
+             s.campaign, s.content, s.referrer,
+             s.city, s.country, s.region, s.timezone, s.language, s.network,
+             s.device,
              s.browser, s.browser_version, s.os, s.os_version, s.ip,
              s.landing_path, s.exit_path,
-             s.page_views, s.max_scroll, s.cta_clicks, s.interactions,
+             s.screen_w, s.screen_h, s.device_screen_w, s.device_screen_h,
+             s.page_views, s.max_scroll,
+             CASE WHEN s.scroll_samples = 0 THEN 0
+                  ELSE ROUND(s.scroll_sum::numeric / s.scroll_samples) END AS avg_scroll,
+             s.cta_clicks, s.interactions, s.mouse_clicks, s.mouse_moves,
+             s.form_started, s.form_submitted,
              s.duration_ms, s.converted, s.is_bounce, s.is_returning,
              (s.last_event_at > now() - interval '5 minutes') AS is_live,
              EXISTS (SELECT 1 FROM recordings r WHERE r.session_id = s.id) AS has_recording,
@@ -114,13 +137,20 @@ export async function getSessions(
   return {
     rows: rows.map((r) => ({
       id: String(r.id),
+      visitorId: String(r.visitor_id),
       startedAt: String(r.started_at),
       lastEventAt: String(r.last_event_at),
       source: String(r.source),
       medium: String(r.medium),
       campaign: (r.campaign as string | null) ?? null,
+      content: (r.content as string | null) ?? null,
+      referrer: (r.referrer as string | null) ?? null,
       city: (r.city as string | null) ?? null,
       country: (r.country as string | null) ?? null,
+      region: (r.region as string | null) ?? null,
+      timezone: (r.timezone as string | null) ?? null,
+      language: (r.language as string | null) ?? null,
+      network: (r.network as string | null) ?? null,
       device: (r.device as string | null) ?? null,
       browser: (r.browser as string | null) ?? null,
       browserVersion: (r.browser_version as string | null) ?? null,
@@ -129,10 +159,19 @@ export async function getSessions(
       ip: (r.ip as string | null) ?? null,
       landingPath: (r.landing_path as string | null) ?? null,
       exitPath: (r.exit_path as string | null) ?? null,
+      screenW: r.screen_w === null ? null : n(r.screen_w),
+      screenH: r.screen_h === null ? null : n(r.screen_h),
+      deviceScreenW: r.device_screen_w === null ? null : n(r.device_screen_w),
+      deviceScreenH: r.device_screen_h === null ? null : n(r.device_screen_h),
       pageViews: n(r.page_views),
       maxScroll: n(r.max_scroll),
+      avgScroll: n(r.avg_scroll),
       ctaClicks: n(r.cta_clicks),
       interactions: n(r.interactions),
+      mouseClicks: n(r.mouse_clicks),
+      mouseMoves: n(r.mouse_moves),
+      formStarted: Boolean(r.form_started),
+      formSubmitted: Boolean(r.form_submitted),
       durationMs: n(r.duration_ms),
       converted: Boolean(r.converted),
       isBounce: Boolean(r.is_bounce),
