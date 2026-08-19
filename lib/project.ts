@@ -475,14 +475,12 @@ export const gallery: GalleryItem[] = [
   {
     category: "Temple",
     caption: "Temple within the township",
-    image: "/images/mumbai-ganesha-temple.jpg",
-    representative: true,
+    image: "/images/township-temple.jpg",
   },
   {
     category: "Swimming Pool",
     caption: "Resort-style swimming pool",
-    image: "/images/pool.jpg",
-    representative: true,
+    image: "/images/township-pool.jpg",
   },
   {
     category: "Gardens",
@@ -491,21 +489,18 @@ export const gallery: GalleryItem[] = [
   },
   {
     category: "Open Spaces",
-    caption: "The wider Mumbai metropolitan region",
-    image: "/images/mumbai-township-aerial.jpg",
-    representative: true,
+    caption: "Landscaped open spaces within the township",
+    image: "/images/township-open-spaces.jpg",
   },
   {
     category: "Amenities",
-    caption: "Mumbai Metro connectivity",
-    image: "/images/mumbai-metro.jpg",
-    representative: true,
+    caption: "Retail plaza and everyday convenience",
+    image: "/images/township-retail-plaza.jpg",
   },
   {
     category: "Exterior Views",
-    caption: "Mumbai residential neighbourhood",
-    image: "/images/mumbai-residential.jpg",
-    representative: true,
+    caption: "Tower cluster and township exteriors",
+    image: "/images/township-towers.jpg",
   },
 ];
 

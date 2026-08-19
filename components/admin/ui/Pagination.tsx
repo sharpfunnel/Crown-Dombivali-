@@ -25,7 +25,7 @@ export function Pagination({
   const last = Math.min(page * pageSize, total);
 
   return (
-    <div className="mt-4 flex items-center justify-between gap-4 text-xs text-white/45">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
       <p>
         {first.toLocaleString("en-IN")}–{last.toLocaleString("en-IN")} of{" "}
         {total.toLocaleString("en-IN")}

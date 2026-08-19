@@ -58,7 +58,7 @@ export default async function TechStackPage({
         <EmptyState>No sessions in this range.</EmptyState>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card title="Devices">
               <DevicesDonut items={data.devices} />
             </Card>
@@ -82,7 +82,7 @@ export default async function TechStackPage({
             </Card>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card title="By browser" subtitle="Is Safari secretly broken?">
               <CohortTable rows={data.browsers} siteBounce={siteBounce} siteConv={siteConv} />
             </Card>
@@ -95,7 +95,7 @@ export default async function TechStackPage({
             </Card>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card title="Language">
               <BarList
                 items={data.languages.map((l) => ({

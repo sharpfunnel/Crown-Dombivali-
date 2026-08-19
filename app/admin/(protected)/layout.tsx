@@ -32,7 +32,7 @@ export default async function ProtectedAdminLayout({
   return (
     <div className="min-h-screen bg-[#0b1220] text-white">
       <header className="sticky top-0 z-10 border-b border-white/10 bg-[#0b1220]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-5 sm:py-4">
           <p className="text-lg font-bold whitespace-nowrap">
             Premier<span className="text-accent">.</span>
           </p>
@@ -49,7 +49,7 @@ export default async function ProtectedAdminLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-5 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8">
         {/* AdminNav reads the query string to keep the date range across
             navigations; Suspense keeps that out of the render path above it. */}
         <Suspense fallback={<div className="mb-8 h-12 border-b border-white/10" />}>
