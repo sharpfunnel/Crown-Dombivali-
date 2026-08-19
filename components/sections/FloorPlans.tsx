@@ -245,7 +245,7 @@ function PlanTwoBhk() {
       viewBox="0 0 420 336"
       className="h-auto w-full"
       role="img"
-      aria-label="2 BHK typical unit plan, 487 square feet carpet area"
+      aria-label="2 BHK typical unit plan, 572 square feet carpet area"
     >
       <rect x="20" y="20" width="380" height="280" {...wall} />
       {/* full-height column dividers */}
