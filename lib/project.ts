@@ -121,9 +121,9 @@ export const configurations: Configuration[] = [
   {
     id: "2bhk",
     type: "2 BHK",
-    carpetArea: "487 sq. ft.",
-    price: "₹59.99 Lakhs",
-    priceNote: "+ Taxes",
+    carpetArea: "572 sq. ft.",
+    price: "₹69.99 Lakhs",
+    priceNote: "++ Taxes & Charges",
     plan: "Typical Unit Plan — Coral C & D",
     rooms: [
       { name: "Living Room", size: "10'0\" × 12'10\"" },
@@ -153,7 +153,7 @@ export type PropertyType = {
 
 export const propertyTypes: PropertyType[] = [
   { type: "1 BHK", summary: "Compact, efficient homes", price: "₹54 Lakhs", priceNote: "++ onwards*" },
-  { type: "2 BHK", summary: "Spacious family homes", price: "₹59.99 Lakhs", priceNote: "onwards*" },
+  { type: "2 BHK", summary: "Spacious family homes", price: "₹69.99 Lakhs", priceNote: "++ onwards*" },
   { type: "3 BHK", summary: "Premium larger residences", price: "Price on request", priceNote: "" },
   { type: "4 BHK", summary: "Expansive luxury homes", price: "Price on request", priceNote: "" },
   { type: "Villas", summary: "Independent villa living", price: "Price on request", priceNote: "" },
@@ -523,12 +523,12 @@ export const faqs = [
   {
     question: "What configurations are available?",
     answer:
-      "Lodha Premier Dombivli offers premium 1, 2, 3 & 4 BHK apartments along with villas, bungalows and duplex homes. The 1 BHK has a carpet area of 444 sq. ft. and the 2 BHK is 487 sq. ft.; larger formats are available on request. Request the price sheet for the full unit-wise breakdown.",
+      "Lodha Premier Dombivli offers premium 1, 2, 3 & 4 BHK apartments along with villas, bungalows and duplex homes. The 1 BHK has a carpet area of 444 sq. ft. and the 2 BHK is 572 sq. ft.; larger formats are available on request. Request the price sheet for the full unit-wise breakdown.",
   },
   {
     question: "What is the starting price?",
     answer:
-      "Homes at Lodha Premier Dombivli start at ₹54 Lakhs++ for a 1 BHK, and ₹59.99 Lakhs + taxes for a 2 BHK. Pricing for 3 & 4 BHK, villas, bungalows and duplexes is shared on request. Taxes, government charges, registration and other applicable costs are extra.",
+      "Homes at Lodha Premier Dombivli start at ₹54 Lakhs++ for a 1 BHK, and ₹69.99 Lakhs++ for a 2 BHK. Pricing for 3 & 4 BHK, villas, bungalows and duplexes is shared on request. Taxes, government charges, registration and other applicable costs are extra.",
   },
   {
     question: "Are prices negotiable?",
