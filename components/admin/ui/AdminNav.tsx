@@ -36,6 +36,7 @@ const LINKS: NavLink[] = [
   { href: "/admin/tech-stack", label: "Tech stack" },
   { href: "/admin/performance", label: "Performance" },
   { href: "/admin/errors", label: "Errors" },
+  { href: "/admin/telegram", label: "Telegram" },
 ];
 
 export function AdminNav({ counts }: { counts: NavCounts }) {
