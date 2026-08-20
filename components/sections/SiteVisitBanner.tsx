@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { SiteVisitForm } from "@/components/sections/SiteVisitForm";
+import { WhatsappLink } from "@/components/ui/WhatsappLink";
 import { project } from "@/lib/project";
 
 export function SiteVisitBanner() {
@@ -60,14 +61,14 @@ export function SiteVisitBanner() {
               >
                 <PhoneIcon /> Call Now
               </a>
-              <a
+              <WhatsappLink
                 href={project.whatsappHref}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2.5 bg-[#25D366] px-8 py-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1eb857]"
               >
                 <WhatsAppIcon /> {project.whatsappCta}
-              </a>
+              </WhatsappLink>
               <a
                 href="#lead-form"
                 className="inline-flex items-center gap-2.5 bg-accent px-8 py-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-light"

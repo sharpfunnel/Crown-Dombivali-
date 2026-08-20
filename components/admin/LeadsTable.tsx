@@ -65,11 +65,17 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
                   {when(lead.createdAt)}
                 </button>
               </Td>
-              <Td className="text-white">{lead.name}</Td>
+              <Td className="text-white">
+                {lead.name || `Lead #${lead.id.slice(-6).toUpperCase()}`}
+              </Td>
               <Td className="font-mono text-xs whitespace-nowrap">
-                <a href={`tel:${lead.mobile}`} className="hover:text-accent">
-                  {lead.mobile}
-                </a>
+                {lead.mobile ? (
+                  <a href={`tel:${lead.mobile}`} className="hover:text-accent">
+                    {lead.mobile}
+                  </a>
+                ) : (
+                  <span className="text-white/30">—</span>
+                )}
                 {lead.email && (
                   <div className="mt-0.5 font-sans text-white/40">{lead.email}</div>
                 )}
@@ -222,7 +228,9 @@ function LeadDetailPanel({
         <header className="sticky top-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[#0b1220] px-5 py-4">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">
-              {detail?.lead.name ?? "Lead"}
+              {detail
+                ? detail.lead.name || `Lead #${detail.lead.id.slice(-6).toUpperCase()}`
+                : "Lead"}
             </p>
             <p className="truncate text-xs text-white/45">
               {detail ? when(detail.lead.createdAt) : "Loading…"}

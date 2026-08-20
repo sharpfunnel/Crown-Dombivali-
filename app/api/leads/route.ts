@@ -7,6 +7,7 @@ import {
 } from "@/lib/db";
 import { attributeLead, getLeadForCapi, markLeadCapi } from "@/lib/analytics";
 import { sendLeadConversionEvent } from "@/lib/meta/capi";
+import { sendLeadTelegramNotification } from "@/lib/telegram/notify";
 import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
 // Leads are written per request — never prerender or cache this handler.
@@ -99,6 +100,9 @@ export async function POST(request: Request) {
         console.error("[leads] CAPI send failed:", e);
       }
     });
+
+    // Telegram notification — same fire-and-forget contract as CAPI above.
+    after(() => sendLeadTelegramNotification(saved.id));
 
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
   } catch (err) {

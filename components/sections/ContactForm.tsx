@@ -6,6 +6,7 @@ import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
 import { budgetOptions, project, propertyPreferences } from "@/lib/project";
+import { WhatsappLink } from "@/components/ui/WhatsappLink";
 import { useLeadForm } from "@/lib/useLeadForm";
 import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
 import { SuccessTick } from "@/components/ui/SuccessTick";
@@ -64,7 +65,7 @@ function ContactDetails() {
         </a>
       </li>
       <li>
-        <a
+        <WhatsappLink
           href={project.whatsappHref}
           target="_blank"
           rel="noreferrer"
@@ -79,7 +80,7 @@ function ContactDetails() {
               {project.whatsappNumber}
             </span>
           </span>
-        </a>
+        </WhatsappLink>
       </li>
       <li>
         <a

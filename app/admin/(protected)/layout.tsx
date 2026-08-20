@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/auth";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 import { AdminNav } from "@/components/admin/ui/AdminNav";
+import AssistantWidget from "@/components/admin/AssistantWidget";
 import { getNavCounts } from "@/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
@@ -36,12 +37,12 @@ export default async function ProtectedAdminLayout({
           <p className="text-lg font-bold whitespace-nowrap">
             Premier<span className="text-accent">.</span>
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="hidden text-sm text-white/55 transition-colors hover:text-white sm:block"
+              className="text-xs whitespace-nowrap text-white/55 transition-colors hover:text-white sm:text-sm"
             >
               View site ↗
             </a>
@@ -57,6 +58,7 @@ export default async function ProtectedAdminLayout({
         </Suspense>
         {children}
       </main>
+      <AssistantWidget />
     </div>
   );
 }

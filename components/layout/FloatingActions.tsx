@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
+import { WhatsappLink } from "@/components/ui/WhatsappLink";
 import { project } from "@/lib/project";
 
 /**
@@ -23,7 +24,7 @@ export function FloatingActions() {
       {/* Desktop rail                                                      */}
       {/* ---------------------------------------------------------------- */}
       <div className="fixed right-5 bottom-6 z-40 hidden flex-col gap-2.5 lg:flex">
-        <a
+        <WhatsappLink
           href={project.whatsappHref}
           target="_blank"
           rel="noreferrer"
@@ -31,7 +32,7 @@ export function FloatingActions() {
           className="group flex h-13 w-13 items-center justify-center bg-[#25D366] text-white shadow-lg transition-transform duration-300 hover:scale-105"
         >
           <WhatsAppIcon className="h-6 w-6" />
-        </a>
+        </WhatsappLink>
         <a
           href={`tel:${project.phoneHref}`}
           aria-label={`Call ${project.phone}`}
@@ -87,7 +88,7 @@ export function FloatingActions() {
           <PhoneIcon className="h-5 w-5 text-accent" />
           Call
         </a>
-        <a
+        <WhatsappLink
           href={project.whatsappHref}
           target="_blank"
           rel="noreferrer"
@@ -95,7 +96,7 @@ export function FloatingActions() {
         >
           <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
           WhatsApp
-        </a>
+        </WhatsappLink>
         <a
           href="#lead-form"
           className="flex flex-col items-center justify-center gap-1 bg-accent py-3 text-[0.7rem] font-bold text-white uppercase"

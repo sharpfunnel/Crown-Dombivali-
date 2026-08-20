@@ -3,6 +3,7 @@ import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
+import { WhatsappLink } from "@/components/ui/WhatsappLink";
 import { nri, project, type NriIcon } from "@/lib/project";
 
 const icons: Record<NriIcon, React.ReactNode> = {
@@ -90,14 +91,14 @@ export function NriInvestors() {
               <Button href="#lead-form" variant="accent" icon={false} className="px-8">
                 Book a Virtual Tour
               </Button>
-              <a
+              <WhatsappLink
                 href={project.whatsappHref}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2.5 bg-[#25D366] px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1eb857]"
               >
                 <WhatsAppIcon /> {project.whatsappCta}
-              </a>
+              </WhatsappLink>
             </Reveal>
           </div>
 
