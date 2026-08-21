@@ -34,6 +34,7 @@ export function Hero() {
           alt="Aerial render of the Lodha Premier Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
           fill
           priority
+          quality={60}
           sizes="100vw"
           className="object-cover object-center"
         />
@@ -48,18 +49,16 @@ export function Hero() {
         {/* Left: headline, subheading, badges, CTAs                          */}
         {/* ---------------------------------------------------------------- */}
         <div>
-          <m.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.6 }}
-            className="mb-5 inline-flex items-center gap-2.5 border border-white/25 bg-white/10 px-4 py-2 text-xs font-medium tracking-[0.16em] text-white uppercase backdrop-blur-sm"
+          <p
+            style={{ animationDelay: "150ms" }}
+            className="animate-fade-up mb-5 inline-flex items-center gap-2.5 border border-white/25 bg-white/10 px-4 py-2 text-xs font-medium tracking-[0.16em] text-white uppercase backdrop-blur-sm"
           >
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 [animation:pulse-ring_2.4s_ease-out_infinite]" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
             </span>
             New Launch · {project.locality}
-          </m.p>
+          </p>
 
           <h1 className="max-w-2xl text-[2.15rem] leading-[1.1] font-bold tracking-[-0.02em] text-white sm:text-[2.75rem] lg:text-[3.4rem]">
             <span className="sr-only">{hero.heading}</span>
@@ -69,37 +68,27 @@ export function Hero() {
                   key={`${word}-${i}`}
                   className="mr-[0.24em] inline-block overflow-hidden pb-[0.08em] align-bottom"
                 >
-                  <m.span
-                    className="inline-block"
-                    initial={{ y: "115%" }}
-                    animate={{ y: 0 }}
-                    transition={{
-                      delay: 0.2 + i * 0.055,
-                      duration: 0.95,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
+                  <span
+                    className="animate-word-reveal inline-block"
+                    style={{ animationDelay: `${200 + i * 55}ms` }}
                   >
                     {word}
-                  </m.span>
+                  </span>
                 </span>
               ))}
             </span>
           </h1>
 
-          <m.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 text-xl font-semibold text-accent sm:text-2xl"
+          <p
+            style={{ animationDelay: "750ms" }}
+            className="animate-fade-up mt-6 text-xl font-semibold text-accent sm:text-2xl"
           >
             {hero.subheading}
-          </m.p>
+          </p>
 
-          <m.ul
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.85, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-7 flex flex-wrap gap-2.5"
+          <ul
+            style={{ animationDelay: "850ms" }}
+            className="animate-fade-up mt-7 flex flex-wrap gap-2.5"
           >
             {hero.badges.map((badge) => (
               <li
@@ -110,32 +99,28 @@ export function Hero() {
                 {badge}
               </li>
             ))}
-          </m.ul>
+          </ul>
 
-          <m.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.95, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-9 flex flex-wrap gap-3"
+          <div
+            style={{ animationDelay: "950ms" }}
+            className="animate-fade-up mt-9 flex flex-wrap gap-3"
           >
             <Button href="#lead-form" variant="accent" icon={false} className="px-8">
               Book Free Site Visit
             </Button>
-          </m.div>
+          </div>
         </div>
 
         {/* ---------------------------------------------------------------- */}
         {/* Right: lead capture form                                          */}
         {/* ---------------------------------------------------------------- */}
-        <m.div
-          initial={{ opacity: 0, y: 34 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+        <div
+          style={{ animationDelay: "600ms" }}
           id="lead-form"
-          className="scroll-mt-28 lg:justify-self-end"
+          className="animate-fade-up scroll-mt-28 lg:justify-self-end"
         >
           <LeadForm />
-        </m.div>
+        </div>
       </div>
     </section>
   );

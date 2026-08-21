@@ -52,8 +52,8 @@ export function SmoothScroll() {
         frame = requestAnimationFrame(raf);
       };
 
-      if (idle) idle(start, { timeout: 2000 });
-      else window.setTimeout(start, 200);
+      if (idle) idle(start, { timeout: 4000 });
+      else window.setTimeout(start, 1000);
     }
 
     const scrollToId = (id: string) => {
