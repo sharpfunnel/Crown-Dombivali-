@@ -118,7 +118,7 @@ export function SessionRecorder() {
       }
     ).requestIdleCallback;
     const kickoff = () =>
-      idle ? idle(() => start(), { timeout: 6000 }) : window.setTimeout(start, 3000);
+      idle ? idle(() => start(), { timeout: 2500 }) : window.setTimeout(start, 1200);
     if (document.readyState === "complete") kickoff();
     else window.addEventListener("load", kickoff, { once: true });
 

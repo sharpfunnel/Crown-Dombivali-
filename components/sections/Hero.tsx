@@ -34,7 +34,6 @@ export function Hero() {
           alt="Aerial render of the Lodha Premier Dombivli Manpada township showing the residential towers, clubhouse and riverside setting"
           fill
           priority
-          quality={60}
           sizes="100vw"
           className="object-cover object-center"
         />
