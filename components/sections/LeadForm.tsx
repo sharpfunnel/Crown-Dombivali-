@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { project } from "@/lib/project";
 import { useLeadForm } from "@/lib/useLeadForm";
 import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
@@ -77,7 +77,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
 
       <AnimatePresence>
         {error && (
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             role="alert"
@@ -88,7 +88,7 @@ export function LeadForm({ compact = false }: { compact?: boolean }) {
               {project.phone}
             </a>
             .
-          </motion.p>
+          </m.p>
         )}
       </AnimatePresence>
 

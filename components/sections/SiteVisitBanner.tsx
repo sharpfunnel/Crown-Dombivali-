@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "motion/react";
+import { m, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
@@ -20,7 +20,7 @@ export function SiteVisitBanner() {
   return (
     <section ref={ref} className="relative overflow-hidden">
       <div className="grain relative py-20 lg:py-28">
-        <motion.div style={{ y }} className="absolute inset-0 -top-[12%] h-[124%]">
+        <m.div style={{ y }} className="absolute inset-0 -top-[12%] h-[124%]">
           <Image
             src="/images/render-sports.jpg"
             alt=""
@@ -29,7 +29,7 @@ export function SiteVisitBanner() {
             sizes="100vw"
             className="object-cover"
           />
-        </motion.div>
+        </m.div>
         <div className="absolute inset-0 bg-[#04182f]/80" />
         <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 via-transparent to-transparent" />
 

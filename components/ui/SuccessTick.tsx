@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 
 /** Circle that draws itself, then a check that strokes in. */
 export function SuccessTick({ className = "h-14 w-14" }: { className?: string }) {
@@ -15,7 +15,7 @@ export function SuccessTick({ className = "h-14 w-14" }: { className?: string })
         };
 
   return (
-    <motion.svg
+    <m.svg
       viewBox="0 0 52 52"
       className={className}
       initial={reduced ? false : { scale: 0.6, opacity: 0 }}
@@ -23,7 +23,7 @@ export function SuccessTick({ className = "h-14 w-14" }: { className?: string })
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
       aria-hidden
     >
-      <motion.circle
+      <m.circle
         cx="26"
         cy="26"
         r="24"
@@ -34,7 +34,7 @@ export function SuccessTick({ className = "h-14 w-14" }: { className?: string })
         initial={reduced ? false : { pathLength: 0 }}
         animate={draw(0)}
       />
-      <motion.path
+      <m.path
         d="M15 27l7.5 7.5L37 19"
         fill="none"
         stroke="currentColor"
@@ -44,6 +44,6 @@ export function SuccessTick({ className = "h-14 w-14" }: { className?: string })
         initial={reduced ? false : { pathLength: 0 }}
         animate={draw(0.35)}
       />
-    </motion.svg>
+    </m.svg>
   );
 }

@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingActions } from "@/components/layout/FloatingActions";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 import { Tracker } from "@/components/analytics/Tracker";
 import { SessionRecorder } from "@/components/analytics/SessionRecorder";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
@@ -22,10 +23,12 @@ export default function MarketingLayout({
       <SessionRecorder />
       <MetaPixel />
       <SmoothScroll />
-      <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
-      <FloatingActions />
+      <MotionProvider>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
+        <FloatingActions />
+      </MotionProvider>
     </>
   );
 }

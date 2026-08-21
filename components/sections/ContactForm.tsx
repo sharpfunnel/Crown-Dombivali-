@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
@@ -235,7 +235,7 @@ function FullContactForm() {
 
       <AnimatePresence>
         {error && (
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             role="alert"
@@ -246,7 +246,7 @@ function FullContactForm() {
               {project.phone}
             </a>
             .
-          </motion.p>
+          </m.p>
         )}
       </AnimatePresence>
     </form>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
@@ -72,7 +72,7 @@ export function Gallery() {
                 }`}
               >
                 {filter === cat && (
-                  <motion.span
+                  <m.span
                     layoutId="gallery-filter"
                     className="absolute inset-0 bg-accent"
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
@@ -84,7 +84,7 @@ export function Gallery() {
           </div>
         </Reveal>
 
-        <motion.div
+        <m.div
           layout
           className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
@@ -92,7 +92,7 @@ export function Gallery() {
             {items.map((item) => {
               const viewIndex = item.image ? viewable.indexOf(item) : -1;
               return (
-                <motion.div
+                <m.div
                   key={`${item.category}-${item.caption}`}
                   layout
                   initial={{ opacity: 0, scale: 0.96 }}
@@ -163,11 +163,11 @@ export function Gallery() {
                       </span>
                     </div>
                   )}
-                </motion.div>
+                </m.div>
               );
             })}
           </AnimatePresence>
-        </motion.div>
+        </m.div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
@@ -175,7 +175,7 @@ export function Gallery() {
       {/* ------------------------------------------------------------------ */}
       <AnimatePresence>
         {active?.image && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -196,7 +196,7 @@ export function Gallery() {
               </svg>
             </button>
 
-            <motion.figure
+            <m.figure
               key={active.caption}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -227,7 +227,7 @@ export function Gallery() {
                   {lightbox! + 1} / {viewable.length}
                 </span>
               </figcaption>
-            </motion.figure>
+            </m.figure>
 
             <NavButton
               side="left"
@@ -243,7 +243,7 @@ export function Gallery() {
                 setLightbox((v) => (v === null ? v : (v + 1) % viewable.length))
               }
             />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </section>

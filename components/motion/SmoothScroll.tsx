@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Lenis from "lenis";
+import type Lenis from "lenis";
 
 /** Height of the fixed header, so anchored sections aren't hidden beneath it. */
 const HEADER_OFFSET = 96;
@@ -13,6 +13,10 @@ const HEADER_OFFSET = 96;
  * scroll smoothly AND leave the address bar clean — no `/#lead-form` hash is
  * pushed into the URL. Falls back to native smooth scrolling when the user has
  * asked for reduced motion.
+ *
+ * Lenis is dynamically imported and started at idle, like the session
+ * recorder — momentum scrolling is a nice-to-have, not something that should
+ * compete with hydration for main-thread time on first load.
  */
 export function SmoothScroll() {
   useEffect(() => {
@@ -22,20 +26,34 @@ export function SmoothScroll() {
 
     let lenis: Lenis | null = null;
     let frame = 0;
+    let cancelled = false;
 
     if (!reduced) {
-      lenis = new Lenis({
-        duration: 1.15,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        touchMultiplier: 1.6,
-      });
+      const idle = (
+        window as unknown as {
+          requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void;
+        }
+      ).requestIdleCallback;
 
-      const raf = (time: number) => {
-        lenis!.raf(time);
+      const start = async () => {
+        const { default: LenisCtor } = await import("lenis");
+        if (cancelled) return;
+        lenis = new LenisCtor({
+          duration: 1.15,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          touchMultiplier: 1.6,
+        });
+
+        const raf = (time: number) => {
+          lenis!.raf(time);
+          frame = requestAnimationFrame(raf);
+        };
         frame = requestAnimationFrame(raf);
       };
-      frame = requestAnimationFrame(raf);
+
+      if (idle) idle(start, { timeout: 2000 });
+      else window.setTimeout(start, 200);
     }
 
     const scrollToId = (id: string) => {
@@ -97,6 +115,7 @@ export function SmoothScroll() {
     }
 
     return () => {
+      cancelled = true;
       document.removeEventListener("click", onClick);
       if (settle) clearTimeout(settle);
       if (frame) cancelAnimationFrame(frame);

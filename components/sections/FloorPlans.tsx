@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
@@ -45,7 +45,7 @@ export function FloorPlans() {
                   }`}
                 >
                   {active === i && (
-                    <motion.span
+                    <m.span
                       layoutId="plan-tab"
                       className="absolute inset-0 bg-accent"
                       transition={{ type: "spring", stiffness: 380, damping: 32 }}
@@ -62,7 +62,7 @@ export function FloorPlans() {
           <div className="grid gap-px bg-white/10 lg:grid-cols-[1.35fr_0.65fr]">
             <div className="flex items-center justify-center bg-ink-800 p-6 sm:p-12">
               <AnimatePresence mode="wait">
-                <motion.div
+                <m.div
                   key={config.id}
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -71,7 +71,7 @@ export function FloorPlans() {
                   className="w-full max-w-xl"
                 >
                   {config.id === "1bhk" ? <PlanOneBhk /> : <PlanTwoBhk />}
-                </motion.div>
+                </m.div>
               </AnimatePresence>
             </div>
 

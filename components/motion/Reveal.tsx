@@ -1,22 +1,22 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { m, useReducedMotion, type Variants } from "motion/react";
 import type { ReactNode } from "react";
 
 type Direction = "up" | "down" | "left" | "right" | "none";
 
 /* Static map — creating motion components during render would remount on every pass. */
 const tags = {
-  div: motion.div,
-  section: motion.section,
-  article: motion.article,
-  li: motion.li,
-  span: motion.span,
-  h1: motion.h1,
-  h2: motion.h2,
-  h3: motion.h3,
-  p: motion.p,
-  figure: motion.figure,
+  div: m.div,
+  section: m.section,
+  article: m.article,
+  li: m.li,
+  span: m.span,
+  h1: m.h1,
+  h2: m.h2,
+  h3: m.h3,
+  p: m.p,
+  figure: m.figure,
 } as const;
 
 type Tag = keyof typeof tags;
@@ -83,7 +83,7 @@ export function RevealGroup({
   once?: boolean;
 }) {
   return (
-    <motion.div
+    <m.div
       className={className}
       variants={groupVariants}
       initial="hidden"
@@ -91,7 +91,7 @@ export function RevealGroup({
       viewport={{ once, amount }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -108,7 +108,7 @@ export function RevealItem({
   const from = reduced ? offsets.none : offsets[direction];
 
   return (
-    <motion.div
+    <m.div
       className={className}
       variants={{
         hidden: { opacity: 0, ...from },
@@ -121,6 +121,6 @@ export function RevealItem({
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

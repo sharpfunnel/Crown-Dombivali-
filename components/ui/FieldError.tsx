@@ -1,13 +1,13 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 
 /** Inline validation message shown beneath a field. Renders nothing when valid. */
 export function FieldError({ message, id }: { message?: string; id?: string }) {
   return (
     <AnimatePresence>
       {message && (
-        <motion.p
+        <m.p
           id={id}
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
@@ -24,7 +24,7 @@ export function FieldError({ message, id }: { message?: string; id?: string }) {
             />
           </svg>
           {message}
-        </motion.p>
+        </m.p>
       )}
     </AnimatePresence>
   );

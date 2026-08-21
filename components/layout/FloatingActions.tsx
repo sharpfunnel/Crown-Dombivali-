@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
+import { AnimatePresence, m, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
 import { WhatsappLink } from "@/components/ui/WhatsappLink";
@@ -54,7 +54,7 @@ export function FloatingActions() {
 
         <AnimatePresence>
           {showTop && (
-            <motion.button
+            <m.button
               type="button"
               onClick={toTop}
               aria-label="Back to top"
@@ -72,7 +72,7 @@ export function FloatingActions() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </motion.button>
+            </m.button>
           )}
         </AnimatePresence>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useMotionValueEvent, useScroll } from "motion/react";
+import { m, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { PreferredPartnerLogo } from "@/components/layout/PreferredPartnerLogo";
 import { PhoneIcon } from "@/components/sections/SiteVisitBanner";
@@ -14,7 +14,7 @@ export function Header() {
   useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 40));
 
   return (
-    <motion.header
+    <m.header
       initial={{ y: -90 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -48,6 +48,6 @@ export function Header() {
           </a>
         </div>
       </div>
-    </motion.header>
+    </m.header>
   );
 }

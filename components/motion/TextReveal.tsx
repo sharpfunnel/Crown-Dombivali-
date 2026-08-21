@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 
 /**
  * Headline that wipes in word by word from behind a mask.
@@ -27,7 +27,7 @@ export function TextReveal({
   return (
     <Tag className={className}>
       <span className="sr-only">{text}</span>
-      <motion.span
+      <m.span
         aria-hidden
         className="inline"
         initial="hidden"
@@ -42,7 +42,7 @@ export function TextReveal({
               key={`${word}-${i}`}
               className="mr-[0.25em] inline-block overflow-hidden align-bottom pb-[0.12em]"
             >
-              <motion.span
+              <m.span
                 className={
                   accent.has(clean) ? "inline-block text-accent" : "inline-block"
                 }
@@ -56,11 +56,11 @@ export function TextReveal({
                 }}
               >
                 {word}
-              </motion.span>
+              </m.span>
             </span>
           );
         })}
-      </motion.span>
+      </m.span>
     </Tag>
   );
 }

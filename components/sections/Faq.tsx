@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
@@ -47,7 +47,7 @@ export function Faq() {
           {faqs.map((faq, i) => {
             const isOpen = open === i;
             return (
-              <motion.div
+              <m.div
                 key={faq.question}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -91,7 +91,7 @@ export function Faq() {
 
                 <AnimatePresence initial={false}>
                   {isOpen && (
-                    <motion.div
+                    <m.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -101,10 +101,10 @@ export function Faq() {
                       <p className="max-w-2xl pb-6 leading-[1.8] text-paper/55">
                         {faq.answer}
                       </p>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>

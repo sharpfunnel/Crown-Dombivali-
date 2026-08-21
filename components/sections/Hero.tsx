@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "motion/react";
+import { m, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { LeadForm } from "@/components/sections/LeadForm";
@@ -25,7 +25,7 @@ export function Hero() {
       id="top"
       className="relative flex min-h-[100svh] items-center overflow-hidden pt-[88px] pb-16 lg:pt-[110px]"
     >
-      <motion.div
+      <m.div
         style={{ y: imageY, scale: imageScale }}
         className="absolute inset-0 -z-10 will-change-transform"
       >
@@ -41,14 +41,14 @@ export function Hero() {
             the photograph keeps its own colour on the right. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(4,24,47,0.94)_0%,rgba(4,24,47,0.86)_34%,rgba(4,24,47,0.5)_58%,rgba(4,24,47,0.12)_78%,transparent_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#04182f]/60 to-transparent" />
-      </motion.div>
+      </m.div>
 
       <div className="shell grid w-full items-center gap-12 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
         {/* ---------------------------------------------------------------- */}
         {/* Left: headline, subheading, badges, CTAs                          */}
         {/* ---------------------------------------------------------------- */}
         <div>
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.6 }}
@@ -59,7 +59,7 @@ export function Hero() {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
             </span>
             New Launch · {project.locality}
-          </motion.p>
+          </m.p>
 
           <h1 className="max-w-2xl text-[2.15rem] leading-[1.1] font-bold tracking-[-0.02em] text-white sm:text-[2.75rem] lg:text-[3.4rem]">
             <span className="sr-only">{hero.heading}</span>
@@ -69,7 +69,7 @@ export function Hero() {
                   key={`${word}-${i}`}
                   className="mr-[0.24em] inline-block overflow-hidden pb-[0.08em] align-bottom"
                 >
-                  <motion.span
+                  <m.span
                     className="inline-block"
                     initial={{ y: "115%" }}
                     animate={{ y: 0 }}
@@ -80,22 +80,22 @@ export function Hero() {
                     }}
                   >
                     {word}
-                  </motion.span>
+                  </m.span>
                 </span>
               ))}
             </span>
           </h1>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.75, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
             className="mt-6 text-xl font-semibold text-accent sm:text-2xl"
           >
             {hero.subheading}
-          </motion.p>
+          </m.p>
 
-          <motion.ul
+          <m.ul
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.85, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
@@ -110,9 +110,9 @@ export function Hero() {
                 {badge}
               </li>
             ))}
-          </motion.ul>
+          </m.ul>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
@@ -121,13 +121,13 @@ export function Hero() {
             <Button href="#lead-form" variant="accent" icon={false} className="px-8">
               Book Free Site Visit
             </Button>
-          </motion.div>
+          </m.div>
         </div>
 
         {/* ---------------------------------------------------------------- */}
         {/* Right: lead capture form                                          */}
         {/* ---------------------------------------------------------------- */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 34 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
@@ -135,7 +135,7 @@ export function Hero() {
           className="scroll-mt-28 lg:justify-self-end"
         >
           <LeadForm />
-        </motion.div>
+        </m.div>
       </div>
     </section>
   );
