@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { PreferredPartnerLogo } from "@/components/layout/PreferredPartnerLogo";
 import { Reveal } from "@/components/motion/Reveal";
@@ -25,13 +24,12 @@ const sectionLinks = [
 export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-ink-800 pt-16 pb-8">
-      <Image
-        src="/images/footer-glow.png"
-        alt=""
-        fill
-        sizes="100vw"
+      {/* Ambient glow, painted rather than downloaded. This was a 5760x2560 PNG
+          — 15 megapixels decoded on every load for what is just a soft wash of
+          colour behind the footer. Two gradients read the same and cost nothing. */}
+      <div
         aria-hidden
-        className="pointer-events-none object-cover opacity-70"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(238,97,35,0.16)_0%,transparent_55%),radial-gradient(90%_60%_at_15%_100%,rgba(26,91,160,0.35)_0%,transparent_60%)]"
       />
       <div
         aria-hidden
