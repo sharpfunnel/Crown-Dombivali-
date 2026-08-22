@@ -16,9 +16,16 @@ import Image from "next/image";
 export function PreferredPartnerLogo({
   className = "",
   priority = false,
+  sizes = "160px",
 }: {
   className?: string;
   priority?: boolean;
+  /**
+   * Rendered CSS width of the lockup. Without it next/image assumes `100vw`
+   * and, on a 2.6x DPR phone, fetches the 1200px variant for a mark that is
+   * drawn ~110px wide — which made this logo the page's LCP element.
+   */
+  sizes?: string;
 }) {
   return (
     <Image
@@ -27,6 +34,7 @@ export function PreferredPartnerLogo({
       width={598}
       height={305}
       priority={priority}
+      sizes={sizes}
       className={`w-auto ${className}`}
     />
   );

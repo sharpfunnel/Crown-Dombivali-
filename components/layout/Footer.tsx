@@ -43,7 +43,7 @@ export function Footer() {
                 white box here — the footer is dark navy. 80px tall = the policy's
                 minimum logo-unit size. */}
             <div className="mb-6 inline-flex bg-white px-4 py-3">
-              <PreferredPartnerLogo className="h-20" />
+              <PreferredPartnerLogo sizes="160px" className="h-20" />
             </div>
 
             <p className="text-2xl font-bold tracking-tight text-paper uppercase">

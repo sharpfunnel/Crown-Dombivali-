@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
+import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
 import "./globals.css";
 
 const GTM_ID = "GTM-KCXRMZXV";
@@ -90,14 +90,7 @@ export default function RootLayout({
           />
         </noscript>
         {children}
-        {/* Google Tag Manager */}
-        <Script id="gtm" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`}
-        </Script>
+        <GoogleTagManager gtmId={GTM_ID} />
       </body>
     </html>
   );
