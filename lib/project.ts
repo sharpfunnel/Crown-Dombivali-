@@ -2,8 +2,8 @@
  * Single source of truth for the Lodha Premier Dombivli Manpada landing page.
  * Copy is taken from the client requirements document.
  *
- * TODO(client): the phone/WhatsApp numbers, project address and RERA number
- * below are placeholders — replace them with the live details before launch.
+ * TODO(client): the phone number, project address and RERA number below are
+ * placeholders — replace them with the live details before launch.
  */
 
 export const project = {
@@ -28,14 +28,6 @@ export const project = {
     "&t=&z=17&ie=UTF8&iwloc=B&output=embed",
   phone: "+91 84510 47710",
   phoneHref: "+918451047710",
-  whatsappNumber: "+91 84510 47710",
-  whatsappHref:
-    "https://wa.me/918451047710?text=" +
-    encodeURIComponent(
-      "Hi, I'm interested in Lodha Premier Dombivli. Please share the price sheet and floor plans.",
-    ),
-  /** Label used on WhatsApp CTAs across the site. */
-  whatsappCta: "Chat on WhatsApp: +91 84510 47710",
   email: "sales@crowndombivli.com",
 } as const;
 
@@ -383,7 +375,7 @@ export const nri = {
   benefits: [
     {
       title: "Live virtual site tours",
-      body: "Walk the project, show flat and clubhouse over a live video call on WhatsApp or Zoom, scheduled to your local time.",
+      body: "Walk the project, show flat and clubhouse over a live video call on Zoom, scheduled to your local time.",
       icon: "video",
     },
     {
@@ -408,7 +400,7 @@ export const nri = {
     },
     {
       title: "Dedicated NRI manager",
-      body: "One point of contact across time zones — reachable on WhatsApp, email and call from booking to possession.",
+      body: "One point of contact across time zones — reachable by email and call from booking to possession.",
       icon: "headset",
     },
   ] as NriBenefit[],

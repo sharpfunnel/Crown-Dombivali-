@@ -4,9 +4,8 @@ import { AnimatePresence, m } from "motion/react";
 import { Reveal } from "@/components/motion/Reveal";
 import { TextReveal } from "@/components/motion/TextReveal";
 import { Eyebrow } from "@/components/ui/SectionHeading";
-import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
+import { PhoneIcon } from "@/components/sections/SiteVisitBanner";
 import { budgetOptions, project, propertyPreferences } from "@/lib/project";
-import { WhatsappLink } from "@/components/ui/WhatsappLink";
 import { useLeadForm } from "@/lib/useLeadForm";
 import { sanitizeNameInput, sanitizePhoneInput } from "@/lib/validation";
 import { SuccessTick } from "@/components/ui/SuccessTick";
@@ -63,24 +62,6 @@ function ContactDetails() {
             </span>
           </span>
         </a>
-      </li>
-      <li>
-        <WhatsappLink
-          href={project.whatsappHref}
-          target="_blank"
-          rel="noreferrer"
-          className="group flex items-center gap-4 border-b border-white/10 py-5"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-[#25D366]/15 text-[#25D366] transition-colors duration-400 group-hover:bg-[#25D366] group-hover:text-white">
-            <WhatsAppIcon className="h-5 w-5" />
-          </span>
-          <span>
-            <span className="block text-xs text-paper/40">WhatsApp</span>
-            <span className="mt-0.5 block font-semibold text-paper transition-colors group-hover:text-[#25D366]">
-              {project.whatsappNumber}
-            </span>
-          </span>
-        </WhatsappLink>
       </li>
       <li>
         <a

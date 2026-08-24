@@ -2,13 +2,12 @@
 
 import { AnimatePresence, m, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
-import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
-import { WhatsappLink } from "@/components/ui/WhatsappLink";
+import { PhoneIcon } from "@/components/sections/SiteVisitBanner";
 import { project } from "@/lib/project";
 
 /**
  * Desktop: a vertical rail of floating actions on the right.
- * Mobile: a sticky Call / WhatsApp / Enquire bar pinned to the bottom.
+ * Mobile: a sticky Call / Enquire bar pinned to the bottom.
  */
 export function FloatingActions() {
   const { scrollY } = useScroll();
@@ -24,15 +23,6 @@ export function FloatingActions() {
       {/* Desktop rail                                                      */}
       {/* ---------------------------------------------------------------- */}
       <div className="fixed right-5 bottom-6 z-40 hidden flex-col gap-2.5 lg:flex">
-        <WhatsappLink
-          href={project.whatsappHref}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={project.whatsappCta}
-          className="group flex h-13 w-13 items-center justify-center bg-[#25D366] text-white shadow-lg transition-transform duration-300 hover:scale-105"
-        >
-          <WhatsAppIcon className="h-6 w-6" />
-        </WhatsappLink>
         <a
           href={`tel:${project.phoneHref}`}
           aria-label={`Call ${project.phone}`}
@@ -80,23 +70,14 @@ export function FloatingActions() {
       {/* ---------------------------------------------------------------- */}
       {/* Mobile sticky bar                                                 */}
       {/* ---------------------------------------------------------------- */}
-      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/10 bg-ink/95 backdrop-blur-xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-white/10 bg-ink/95 backdrop-blur-xl lg:hidden">
         <a
           href={`tel:${project.phoneHref}`}
-          className="flex flex-col items-center justify-center gap-1 py-3 text-[0.7rem] font-semibold text-paper active:bg-white/5"
+          className="flex flex-col items-center justify-center gap-1 border-r border-white/10 py-3 text-[0.7rem] font-semibold text-paper active:bg-white/5"
         >
           <PhoneIcon className="h-5 w-5 text-accent" />
           Call
         </a>
-        <WhatsappLink
-          href={project.whatsappHref}
-          target="_blank"
-          rel="noreferrer"
-          className="flex flex-col items-center justify-center gap-1 border-x border-white/10 py-3 text-[0.7rem] font-semibold text-paper active:bg-white/5"
-        >
-          <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
-          WhatsApp
-        </WhatsappLink>
         <a
           href="#lead-form"
           className="flex flex-col items-center justify-center gap-1 bg-accent py-3 text-[0.7rem] font-bold text-white uppercase"

@@ -53,14 +53,6 @@ export default async function ThankYouPage({
             >
               Call {project.phone}
             </a>
-            <a
-              href={project.whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-accent hover:text-accent"
-            >
-              Chat on WhatsApp
-            </a>
           </div>
         </div>
 

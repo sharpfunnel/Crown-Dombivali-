@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PreferredPartnerLogo } from "@/components/layout/PreferredPartnerLogo";
 import { Reveal } from "@/components/motion/Reveal";
-import { PhoneIcon, WhatsAppIcon } from "@/components/sections/SiteVisitBanner";
-import { WhatsappLink } from "@/components/ui/WhatsappLink";
+import { PhoneIcon } from "@/components/sections/SiteVisitBanner";
 import { disclaimer, project } from "@/lib/project";
 
 const legalLinks = [
@@ -93,15 +92,6 @@ export function Footer() {
                 <PhoneIcon className="h-4 w-4" />
                 {project.phone}
               </a>
-              <WhatsappLink
-                href={project.whatsappHref}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2.5 bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                WhatsApp
-              </WhatsappLink>
             </div>
           </div>
 

@@ -84,7 +84,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         source: {
           type: "string",
           description:
-            "Filter by lead source, e.g. hero_price_sheet, site_visit, contact, whatsapp, unknown.",
+            "Filter by lead source, e.g. hero_price_sheet, site_visit, contact, unknown.",
         },
         campaign: { type: "string", description: "Filter by attributed ad campaign." },
         country: { type: "string", description: "Filter by visitor country." },

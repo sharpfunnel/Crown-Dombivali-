@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         {
           heading: "Communication consent",
           body: [
-            "By submitting an enquiry form on this page, you authorise us to contact you by phone, SMS, email and WhatsApp regarding Lodha Premier Dombivli Manpada, including on numbers registered with DND.",
+            "By submitting an enquiry form on this page, you authorise us to contact you by phone, SMS and email regarding Lodha Premier Dombivli Manpada, including on numbers registered with DND.",
             "You can withdraw that consent at any time by telling us on a call or by writing to us.",
           ],
         },

@@ -17,7 +17,6 @@ export type LeadSource =
   | "hero_price_sheet"
   | "site_visit"
   | "contact"
-  | "whatsapp"
   | "unknown";
 
 export type LeadInput = {
