@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { onFirstInteraction } from "@/lib/deferUntilInteraction";
+
 /**
  * Session replay recorder (rrweb), following the DOM-diff-replay method:
  *
@@ -37,6 +39,7 @@ export function SessionRecorder() {
     let flushTimer = 0;
     let retryTimer = 0;
     let cancelled = false;
+    let cancelInteraction: (() => void) | undefined;
     const retryQueue: { seq: number; events: unknown[] }[] = [];
 
     const post = (batchSeq: number, events: unknown[], useBeacon: boolean) => {
@@ -118,7 +121,16 @@ export function SessionRecorder() {
       }
     ).requestIdleCallback;
     const kickoff = () =>
-      idle ? idle(() => start(), { timeout: 2500 }) : window.setTimeout(start, 1200);
+      // Wait for the visitor to actually do something before booting rrweb.
+      // The opening FullSnapshot serialises the whole DOM (1,591 elements here)
+      // with fonts and stylesheets inlined — Lighthouse clocked it as a 733 ms
+      // long task landing mid-load. A session with no interaction also has
+      // nothing worth replaying, so this costs no useful recordings.
+      cancelInteraction = onFirstInteraction(() => {
+        if (cancelled) return;
+        if (idle) idle(() => start(), { timeout: 2500 });
+        else window.setTimeout(start, 1200);
+      });
     if (document.readyState === "complete") kickoff();
     else window.addEventListener("load", kickoff, { once: true });
 
@@ -135,6 +147,7 @@ export function SessionRecorder() {
       window.clearInterval(flushTimer);
       window.clearTimeout(retryTimer);
       window.removeEventListener("load", kickoff);
+      cancelInteraction?.();
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", onPageHide);
       send(true);

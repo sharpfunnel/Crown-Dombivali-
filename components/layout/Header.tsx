@@ -29,7 +29,11 @@ export function Header() {
           aria-label={`${project.name} — a Lodha Preferred Partner`}
           className="shrink-0"
         >
-          <PreferredPartnerLogo priority className="h-10 sm:h-11 lg:h-14" />
+          <PreferredPartnerLogo
+            priority
+            sizes="(min-width: 1024px) 112px, 88px"
+            className="h-10 sm:h-11 lg:h-14"
+          />
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
