@@ -2,9 +2,6 @@
  * Meta Pixel — browser-side helpers.
  *
  * Deliberately tiny and dependency-free so any client component can import it.
- * The counterpart server sender lives in `lib/meta/capi.ts`; the two are tied
- * together by `event_id` / `eventID` carrying the SAME lead id, which is what
- * lets Meta collapse the browser and server copies into one conversion.
  */
 
 declare global {
@@ -33,10 +30,10 @@ export function trackPixelPageView() {
 }
 
 /**
- * Fire the browser half of a Lead conversion.
+ * Fire a Lead conversion event.
  *
- * `eventId` MUST be the lead row's database id — byte-for-byte the value the
- * server sender puts in `event_id`. Diverge and Meta counts every lead twice.
+ * `eventId` is the lead row's database id, passed as Meta's `eventID` so a
+ * duplicate call for the same lead de-dupes into one conversion.
  */
 export function trackPixelLead(eventId: string) {
   if (!META_PIXEL_ID || !eventId) return;

@@ -6,7 +6,6 @@ import type { LeadDetail, LeadRow } from "@/lib/admin/leads";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/admin/leadStatus";
 import { updateLeadStatus } from "@/lib/admin/actions";
 import { duration, fmt, geo, when } from "@/lib/admin/format";
-import { SendCapiModal } from "@/components/admin/SendCapiModal";
 import { ReplayModal } from "@/components/admin/ReplayModal";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/admin/ui/Table";
 
@@ -49,7 +48,6 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
             <Th>Acquisition</Th>
             <Th>Location</Th>
             <Th>Status</Th>
-            <Th>Meta CAPI</Th>
           </Tr>
         </Thead>
         <tbody>
@@ -112,22 +110,6 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
               </Td>
               <Td>
                 <StatusSelect leadId={lead.id} status={lead.status} />
-              </Td>
-              <Td>
-                <SendCapiModal
-                  lead={{
-                    id: lead.id,
-                    name: lead.name,
-                    mobile: lead.mobile,
-                    email: lead.email,
-                    city: lead.city,
-                    country: lead.country,
-                    metaAdId: lead.metaAdId,
-                    placement: lead.placement,
-                    capiSentAt: lead.capiSentAt,
-                    capiError: lead.capiError,
-                  }}
-                />
               </Td>
             </Tr>
           ))}

@@ -4,9 +4,9 @@ import { duration as formatDuration } from "@/lib/admin/format";
 
 /**
  * Telegram lead notifications — pushes every new lead to a chat/group via a
- * bot, independent of the admin panel. Mirrors the CAPI send in
- * app/api/leads/route.ts: fired from `after()`, and never allowed to affect
- * the lead submission itself.
+ * bot, independent of the admin panel. Fired from `after()` in
+ * app/api/leads/route.ts, and never allowed to affect the lead submission
+ * itself.
  */
 
 function escapeHtml(value: string): string {
@@ -139,7 +139,7 @@ function postTelegramMessage(botToken: string, chatId: string, text: string): Pr
   });
 }
 
-/** Whether both env vars are set — read directly, same pattern used for Meta CAPI's config checks. */
+/** Whether both env vars are set — read directly, the way every dormant-until-configured integration in this app checks itself. */
 export function isTelegramConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
 }

@@ -5,8 +5,7 @@ import {
   type LeadInput,
   type LeadSource,
 } from "@/lib/db";
-import { attributeLead, getLeadForCapi, markLeadCapi } from "@/lib/analytics";
-import { sendLeadConversionEvent } from "@/lib/meta/capi";
+import { attributeLead } from "@/lib/analytics";
 import { sendLeadTelegramNotification } from "@/lib/telegram/notify";
 import { isValidEmail, isValidName, isValidPhone } from "@/lib/validation";
 
@@ -85,23 +84,8 @@ export async function POST(request: Request) {
       console.error("[leads] attribution failed:", e);
     }
 
-    // Fire the server-side Meta "Lead" conversion AFTER the response is sent, so
-    // the visitor never waits on Meta. Dormant until META_PIXEL_ID + token are
-    // set; a failure only annotates the lead row, never breaks submission.
-    after(async () => {
-      try {
-        const ctx = await getLeadForCapi(saved.id);
-        if (!ctx) return;
-        const result = await sendLeadConversionEvent(ctx);
-        if (!result) return; // CAPI not configured — nothing to record
-        if (result.ok) await markLeadCapi(saved.id, new Date(), null);
-        else await markLeadCapi(saved.id, null, result.error);
-      } catch (e) {
-        console.error("[leads] CAPI send failed:", e);
-      }
-    });
-
-    // Telegram notification — same fire-and-forget contract as CAPI above.
+    // Telegram notification — fire-and-forget, after the response is sent, so
+    // a Telegram outage or missing config never breaks lead submission.
     after(() => sendLeadTelegramNotification(saved.id));
 
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });

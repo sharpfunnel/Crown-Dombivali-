@@ -55,8 +55,6 @@ export type LeadRow = {
   device: string | null;
   metaAdId: string | null;
   placement: string | null;
-  capiSentAt: string | null;
-  capiError: string | null;
 };
 
 function toLeadRow(r: Record<string, unknown>): LeadRow {
@@ -82,8 +80,6 @@ function toLeadRow(r: Record<string, unknown>): LeadRow {
     device: (r.device as string | null) ?? null,
     metaAdId: (r.meta_ad_id as string | null) ?? null,
     placement: (r.placement as string | null) ?? null,
-    capiSentAt: (r.meta_capi_sent_at as string | null) ?? null,
-    capiError: (r.meta_capi_error as string | null) ?? null,
   };
 }
 
@@ -98,7 +94,6 @@ export async function getLeads(
     sql`
       SELECT l.id, l.name, l.mobile, l.email, l.configuration, l.budget, l.message,
              l.source, l.status, l.created_at, l.session_id,
-             l.meta_capi_sent_at, l.meta_capi_error,
              s.source AS attr_source, s.medium AS attr_medium,
              s.campaign AS attr_campaign, s.content AS attr_content, s.term AS attr_term,
              s.city, s.country, s.device, s.meta_ad_id, s.placement
@@ -140,8 +135,6 @@ export async function getLeads(
 export type LeadStats = {
   total: number;
   byStatus: Record<LeadStatus, number>;
-  withCapi: number;
-  capiFailed: number;
 };
 
 export async function getLeadStats(days: number): Promise<LeadStats> {
@@ -153,9 +146,7 @@ export async function getLeadStats(days: number): Promise<LeadStats> {
            count(*) FILTER (WHERE status = 'contacted')             AS s_contacted,
            count(*) FILTER (WHERE status = 'qualified')             AS s_qualified,
            count(*) FILTER (WHERE status = 'won')                   AS s_won,
-           count(*) FILTER (WHERE status = 'lost')                  AS s_lost,
-           count(*) FILTER (WHERE meta_capi_sent_at IS NOT NULL)    AS capi_ok,
-           count(*) FILTER (WHERE meta_capi_error IS NOT NULL)      AS capi_failed
+           count(*) FILTER (WHERE status = 'lost')                  AS s_lost
     FROM leads WHERE created_at >= ${from}
   `;
   const r = rows[0];
@@ -168,8 +159,6 @@ export async function getLeadStats(days: number): Promise<LeadStats> {
       won: n(r.s_won),
       lost: n(r.s_lost),
     },
-    withCapi: n(r.capi_ok),
-    capiFailed: n(r.capi_failed),
   };
 }
 
@@ -248,7 +237,6 @@ export async function getLeadDetail(leadId: string): Promise<LeadDetail | null> 
   const base = await sql`
     SELECT l.id, l.name, l.mobile, l.email, l.configuration, l.budget, l.message,
            l.source, l.status, l.created_at, l.session_id, l.visitor_id,
-           l.meta_capi_sent_at, l.meta_capi_error,
            s.source AS attr_source, s.medium AS attr_medium,
            s.campaign AS attr_campaign, s.content AS attr_content, s.term AS attr_term,
            s.city, s.country, s.device, s.meta_ad_id, s.placement,

@@ -53,9 +53,6 @@ export type RequestContext = {
   /** Network Information API. Safari/Firefox don't implement it — expect nulls. */
   network?: string | null;
   downlink?: number | null;
-  /** Meta first-party cookies, read off the request in /api/track. */
-  fbc?: string | null;
-  fbp?: string | null;
 };
 
 // Memoise as a single shared promise so concurrent callers (the dashboard runs
@@ -106,8 +103,6 @@ async function buildSchema() {
       meta_adset_id    TEXT,
       meta_ad_id       TEXT,
       raw_params       JSONB,
-      fbc              TEXT,
-      fbp              TEXT,
       ip            TEXT,
       country       TEXT,
       region        TEXT,
@@ -159,9 +154,6 @@ async function buildSchema() {
   await sql`CREATE INDEX IF NOT EXISTS recordings_session_idx ON recordings (session_id, seq)`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS session_id UUID`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id UUID`;
-  // Meta Conversions API send status (manual + any future auto-fire share these).
-  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS meta_capi_sent_at TIMESTAMPTZ`;
-  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS meta_capi_error TEXT`;
   // Ad-click / Meta ad-hierarchy / raw-param capture (added incrementally).
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gclid TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbclid TEXT`;
@@ -171,9 +163,6 @@ async function buildSchema() {
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_adset_id TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS meta_ad_id TEXT`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS raw_params JSONB`;
-  // Meta first-party cookies (_fbc / _fbp) — the strongest CAPI match signals.
-  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbc TEXT`;
-  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbp TEXT`;
   // Index what the dashboard filters/groups by; Meta campaign id is looked up
   // on its own when joining against ad-platform spend.
   await sql`CREATE INDEX IF NOT EXISTS sessions_campaign_idx ON sessions (source, medium, campaign)`;
@@ -292,7 +281,6 @@ export async function upsertSession(
       INSERT INTO sessions (
         id, visitor_id, source, medium, campaign, term, content, referrer, landing_path,
         gclid, fbclid, msclkid, placement, meta_campaign_id, meta_adset_id, meta_ad_id, raw_params,
-        fbc, fbp,
         ip, country, region, city, user_agent, device, browser, browser_version, os, os_version,
         screen_w, screen_h, device_screen_w, device_screen_h,
         language, timezone, network, downlink, is_returning, exit_path
@@ -303,7 +291,6 @@ export async function upsertSession(
         ${attr.gclid ?? null}, ${attr.fbclid ?? null}, ${attr.msclkid ?? null},
         ${attr.placement ?? null}, ${attr.metaCampaignId ?? null},
         ${attr.metaAdsetId ?? null}, ${attr.metaAdId ?? null}, ${rawParams},
-        ${ctx.fbc ?? null}, ${ctx.fbp ?? null},
         ${ctx.ip ?? null}, ${ctx.country ?? null}, ${ctx.region ?? null}, ${ctx.city ?? null},
         ${ctx.userAgent ?? null}, ${ctx.device ?? null},
         ${ctx.browser ?? null}, ${ctx.browserVersion ?? null},
@@ -316,15 +303,7 @@ export async function upsertSession(
       )
     `;
   } else {
-    // The pixel often writes _fbc/_fbp AFTER the first beacon, so backfill them
-    // on later events — first non-null wins, never overwrite a captured value.
-    await sql`
-      UPDATE sessions SET
-        last_event_at = now(),
-        fbc = COALESCE(fbc, ${ctx.fbc ?? null}),
-        fbp = COALESCE(fbp, ${ctx.fbp ?? null})
-      WHERE id = ${id}
-    `;
+    await sql`UPDATE sessions SET last_event_at = now() WHERE id = ${id}`;
   }
 }
 
@@ -510,58 +489,4 @@ export async function purgeOldData(days = 90): Promise<{
     events: (ev as unknown as { count?: number }).count ?? 0,
     sessions: (ss as unknown as { count?: number }).count ?? 0,
   };
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Meta CAPI lead lookup                                                      */
-/* -------------------------------------------------------------------------- */
-
-/** Load a lead + its originating session for a Meta CAPI send. */
-export async function getLeadForCapi(
-  leadId: string,
-): Promise<import("@/lib/meta/capi").LeadCapiContext | null> {
-  await ensureAnalyticsSchema();
-  const rows = await sql`
-    SELECT l.id, l.name, l.email, l.mobile, l.source, l.created_at,
-           s.ip, s.user_agent, s.country, s.region, s.city,
-           s.fbclid, s.fbc, s.fbp, s.started_at, s.landing_path
-    FROM leads l
-    LEFT JOIN sessions s ON s.id = l.session_id
-    WHERE l.id = ${leadId}
-  `;
-  if (rows.length === 0) return null;
-  const r = rows[0];
-  return {
-    id: String(r.id),
-    createdAt: r.created_at ?? null,
-    name: r.name ?? null,
-    email: r.email ?? null,
-    phone: r.mobile ?? null,
-    source: r.source ?? null,
-    ip: r.ip ?? null,
-    userAgent: r.user_agent ?? null,
-    country: r.country ?? null,
-    region: r.region ?? null,
-    city: r.city ?? null,
-    fbclid: r.fbclid ?? null,
-    fbc: r.fbc ?? null,
-    fbp: r.fbp ?? null,
-    sessionStartedAt: r.started_at ?? null,
-    landingPath: r.landing_path ?? null,
-  };
-}
-
-/** Persist the outcome of a Meta CAPI send on the lead row. */
-export async function markLeadCapi(
-  leadId: string,
-  sentAt: Date | null,
-  error: string | null,
-): Promise<void> {
-  await ensureAnalyticsSchema();
-  await sql`
-    UPDATE leads
-    SET meta_capi_sent_at = ${sentAt ? sentAt.toISOString() : null},
-        meta_capi_error   = ${error}
-    WHERE id = ${leadId}
-  `;
 }

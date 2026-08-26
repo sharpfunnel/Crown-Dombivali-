@@ -96,8 +96,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "getLeadStats",
-    description:
-      "Lead counts by pipeline status, plus Meta CAPI send success/failure counts, for the last N days.",
+    description: "Lead counts by pipeline status, for the last N days.",
     input_schema: { type: "object", properties: { ...DAYS_PARAM } },
   },
   {

@@ -127,10 +127,8 @@ export function useLeadForm(
       // forms collector doesn't listen for it.
       trackFormSubmit(form);
 
-      // Browser half of the Meta Lead conversion. The id is the lead row's id,
-      // which /api/leads also uses as the CAPI `event_id` — the matching pair
-      // is what stops Meta counting this lead twice. Fired BEFORE the redirect
-      // so the pixel call happens while this page is still mounted.
+      // Meta Pixel "Lead" conversion, keyed by the lead row's id. Fired BEFORE
+      // the redirect so the pixel call happens while this page is still mounted.
       if (leadId) trackPixelLead(leadId);
 
       // Redirect to the stable /thank-you URL; the lead id lets that page enrich

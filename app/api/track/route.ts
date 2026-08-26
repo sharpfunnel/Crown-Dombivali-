@@ -201,10 +201,6 @@ export async function POST(request: Request) {
     timezone: str(c.timezone, 60),
     network: str(c.network, 20),
     downlink: num(c.downlink),
-    // First-party Meta cookies the pixel writes on our domain — the strongest
-    // CAPI match signals. Read straight off the request.
-    fbc: str(cookies["_fbc"], 255),
-    fbp: str(cookies["_fbp"], 255),
   };
 
   // Only record traffic from the campaign's target markets — India plus the NRI

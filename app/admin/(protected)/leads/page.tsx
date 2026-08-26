@@ -64,14 +64,7 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      <Card
-        title={`Enquiries (${fmt(total)})`}
-        subtitle={
-          stats.capiFailed > 0
-            ? `${fmt(stats.capiFailed)} Meta CAPI send${stats.capiFailed === 1 ? "" : "s"} failed in this range`
-            : `${fmt(stats.withCapi)} reported to Meta`
-        }
-      >
+      <Card title={`Enquiries (${fmt(total)})`}>
         <FilterBar
           pathname="/admin/leads"
           params={params}
